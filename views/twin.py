@@ -1,4 +1,4 @@
-"""Gemelo Digital: perfil + simulación Monte Carlo con escudos GNP activables."""
+"""Gemelo Digital: simulación Monte Carlo con escudos GNP + Modo Espejo."""
 
 import streamlit as st
 
@@ -52,16 +52,7 @@ def _panel_escudos(c: dict) -> None:
     c["patrimonio"] = st.toggle("🚗🏠 Patrimonio (Autos + Hogar)", c["patrimonio"])
 
 
-def render() -> None:
-    p, c = perfil(), cobertura()
-    ui.hero("🧬 Tu Gemelo Digital",
-            "10,000 simulaciones de tu vida financiera y biológica. Esto no es una cotización: "
-            "es el tablero de control de tu propio destino.")
-
-    _formulario_perfil(p)
-    if p["perfil_completo"]:
-        completar_mision("perfil")
-
+def _tab_simulacion(p: dict, c: dict) -> tuple[dict, dict | None]:
     col_izq, col_der = st.columns([1, 2.6], gap="large")
 
     with col_izq:
@@ -70,7 +61,6 @@ def render() -> None:
         if hay_escudo:
             completar_mision("blindaje")
 
-    # --- simulación -----------------------------------------------------------
     base = dict(c, gmm=False, vida=False, retiro=False, patrimonio=False)
     with st.spinner("Simulando 10,000 versiones de tu futuro…"):
         res_sin = simulator.correr(p, base)
@@ -120,8 +110,7 @@ def render() -> None:
                   delta_color="inverse")
 
     if res_con:
-        primas = res_con["primas_mensuales"]
-        total = sum(primas.values())
+        total = sum(res_con["primas_mensuales"].values())
         st.success(
             f"⚡ Blindaje activo por **~${total:,.0f}/mes** (estimado demo). "
             f"Tu Índice de Estabilidad pasó de **{res_sin['estabilidad']:.0f}** a "
@@ -134,3 +123,80 @@ def render() -> None:
             "y mira el cono de incertidumbre encogerse en tiempo real.",
             icon="⚠️",
         )
+    return res_sin, res_con
+
+
+def _tab_espejo(p: dict, res_sin: dict, res_con: dict | None) -> None:
+    from core import mirror
+
+    st.markdown(
+        "#### 🪞 Conoce a tus dos «yo» del futuro\n"
+        "Sube una foto (o tómala aquí) y mira simbólicamente a la persona que serás a los "
+        f"**{max(p['edad_retiro'], 70)} años** en tus dos futuros posibles: el blindado y el expuesto. "
+        "Ver tu propio rostro en el futuro cambia decisiones — está documentado en economía del comportamiento."
+    )
+    st.caption("La imagen se procesa localmente en tu sesión y no se almacena. Estilización simbólica de demostración "
+               "(en producción: modelo generativo de envejecimiento con consentimiento explícito).")
+
+    fuente = st.radio("Fuente de tu foto", ["📁 Subir archivo", "📷 Cámara"], horizontal=True,
+                      label_visibility="collapsed")
+    img_bytes = None
+    if fuente == "📷 Cámara":
+        cam = st.camera_input("Tómate una foto")
+        if cam:
+            img_bytes = cam.getvalue()
+    else:
+        up = st.file_uploader("Sube tu foto", type=["jpg", "jpeg", "png", "webp"])
+        if up:
+            img_bytes = up.getvalue()
+
+    if not img_bytes:
+        st.info("Tu espejo está esperando. Sube una foto para conocer a tus dos futuros.", icon="🪞")
+        return
+
+    try:
+        protegido, desprotegido = mirror.espejo(img_bytes)
+    except Exception:
+        st.error("No pude procesar esa imagen. Intenta con otra foto (JPG o PNG).")
+        return
+
+    completar_mision("espejo")
+    res_ok = res_con or res_sin
+    c1, c2 = st.columns(2, gap="large")
+    with c1:
+        st.markdown("##### 🛡️ Tu «yo» blindado")
+        st.image(protegido, width="stretch")
+        st.success(
+            f"Patrimonio mediano al retiro: **{ui.dinero(max(res_ok['patrimonio_retiro_mediano'], res_sin['patrimonio_retiro_mediano']))}** · "
+            f"Estabilidad **{max(res_ok['estabilidad'], res_sin['estabilidad']):.0f}/100**. "
+            "Duerme tranquilo: sus riesgos catastróficos los absorbe GNP.",
+            icon="🌅",
+        )
+    with c2:
+        st.markdown("##### ⚠️ Tu «yo» expuesto")
+        st.image(desprotegido, width="stretch")
+        st.error(
+            f"Probabilidad de quiebra pre-retiro: **{res_sin['prob_ruina']*100:.1f}%** · "
+            f"gasto médico de bolsillo esperado **{ui.dinero(res_sin['gasto_medico_promedio'])}**. "
+            "Cada imprevisto lo paga solo, con su patrimonio.",
+            icon="🌫️",
+        )
+    st.markdown("👉 ¿Con cuál de los dos quieres desayunar a los 70? Activa tus escudos en la pestaña "
+                "**📈 Simulación** o diseña tu plan en **🎯 Metas de Vida**.")
+
+
+def render() -> None:
+    p, c = perfil(), cobertura()
+    ui.hero("🧬 Tu Gemelo Digital",
+            "10,000 simulaciones de tu vida financiera y biológica. Esto no es una cotización: "
+            "es el tablero de control de tu propio destino.")
+
+    _formulario_perfil(p)
+    if p["perfil_completo"]:
+        completar_mision("perfil")
+
+    tab_sim, tab_espejo = st.tabs(["📈 Simulación de destino", "🪞 Modo Espejo"])
+    with tab_sim:
+        res_sin, res_con = _tab_simulacion(p, c)
+    with tab_espejo:
+        _tab_espejo(p, res_sin, res_con)

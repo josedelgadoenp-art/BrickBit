@@ -12,15 +12,21 @@ NIVELES = [
     (150, "Estratega", "♟️"),
     (400, "Guardián", "🛡️"),
     (800, "Arquitecto de Destino", "🏛️"),
+    (1300, "Leyenda Vital", "🌟"),
 ]
 
 MISIONES = {
     "perfil": ("Construye tu Gemelo Digital", 100, "🧬"),
     "simulacion": ("Corre tu primera simulación de 10,000 vidas", 80, "🎲"),
     "auditoria": ("Completa tu Auditoría de Vulnerabilidad con VIA", 120, "🔍"),
+    "espejo": ("Mírate a los 70 en el Modo Espejo", 80, "🪞"),
     "meta_1": ("Define tu primera Meta de Vida", 60, "🎯"),
     "meta_3": ("Arquitectura completa: 3 metas en tu línea de vida", 90, "🗺️"),
     "blindaje": ("Activa tu primer escudo GNP en el simulador", 70, "⚡"),
+    "prima_viva": ("Enciende tu Prima Viva con hábitos verificados", 90, "💓"),
+    "familiar": ("Fusiona tu gemelo con el de tu pareja", 110, "👨‍👩‍👧"),
+    "momento": ("Registra un Momento de Vida y re-simula", 50, "🌊"),
+    "certificado": ("Acuña tu primer Certificado de Destino", 150, "🔗"),
     "asesor": ("Conecta con tu copiloto humano GNP", 100, "🤝"),
 }
 

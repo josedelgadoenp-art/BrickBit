@@ -11,6 +11,12 @@ y gamificada**. Unifica en un solo producto tres conceptos:
 | 🎯 **Metas de Vida** | Marketplace de proyectos de vida | Sueños en una línea de tiempo interactiva con costo **indexado a inflación futura** (educativa 8.2%, médica 11.5%, FX) y la mezcla protección + ahorro GNP para garantizarlos. |
 | ⚡ **Consola de Vida** | Seguro proactivo 24/7 | Radar de Vulnerabilidad en vivo, alertas preventivas por zona y **gamificación** (Puntos Vitalidad → reducción de deducibles). |
 | 🤝 **Copiloto Humano** | Asesoría automatizada + cierre humano | Handoff del expediente completo (mapa de sueños, radar, guion sugerido) al asesor GNP para una llamada 100% estratégica. |
+| 🪞 **Modo Espejo** | Economía del comportamiento | Sube tu foto y conoce a tus dos «yo» del futuro: el blindado y el expuesto (estilización local simbólica; producción: modelo generativo con consentimiento). Dentro del Gemelo Digital. |
+| 💓 **Prima Viva** | Suscripción dinámica | La prima baja mes a mes con hábitos verificados (wearables/telemática simulados) hasta -25%, con proyección a 12 meses vs. seguro fijo. Dentro de la Consola. |
+| 👨‍👩‍👧 **Gemelo Familiar** | Hogar completo | Fusiona dos gemelos digitales, simula el hogar y ejecuta el **análisis de supervivencia cruzado** con suma asegurada sugerida por miembro. |
+| 🌊 **Momentos de Vida** | Re-simulación proactiva | Declara eventos (bebé, ascenso, mudanza, recorte…) y el gemelo se re-simula mostrando el antes/después del radar. Dentro de la Consola. |
+| 🔗 **Certificados de Destino** | Logros verificables | Cada meta 100% financiada acuña un certificado encadenado por SHA-256 (mini-blockchain de sesión, verificable y descargable). Dentro de Metas. |
+| 🧑‍💼 **Modo Asesor** | Copiloto del vendedor | Pipeline con scoring de propensión, señales de compra, argumentos rankeados por peso emocional, manejo de objeciones con los números del prospecto y guion de llamada (LLM opcional). |
 
 ## Ejecutar
 
@@ -34,8 +40,14 @@ core/
   products.py         # catálogo GNP referencial + recomendador
   advisor.py          # VIA: NLU en español + LLM opcional (Anthropic)
   gamification.py     # Puntos Vitalidad, niveles, misiones, insignias
+  mirror.py           # Modo Espejo: estilización de tus dos «yo» futuros
+  pulse.py            # Prima Viva: prima dinámica por hábitos verificados
+  family.py           # Gemelo Familiar: hogar fusionado + supervivencia cruzada
+  moments.py          # Momentos de Vida: eventos que re-simulan el gemelo
+  ledger.py           # Certificados de Destino: hash-chain SHA-256 de metas
+  copilot.py          # Copiloto del Asesor: propensión, argumentos, objeciones
   ui.py               # identidad visual + gráficos Plotly de alto impacto
-views/                # las 6 pantallas de la experiencia
+views/                # las 8 pantallas de la experiencia
 ```
 
 > ⚠️ **Demo conceptual.** Parámetros actuariales, primas y productos son ilustrativos y no

@@ -18,7 +18,12 @@ def render() -> None:
         '<span class="via-chip">🤖 IA Conversacional</span>'
         '<span class="via-chip">🎯 Metas de Vida</span>'
         '<span class="via-chip">⚡ Seguro Proactivo</span>'
-        '<span class="via-chip">🎮 Gamificado</span>',
+        '<span class="via-chip">🎮 Gamificado</span>'
+        '<span class="via-chip">🪞 Modo Espejo</span>'
+        '<span class="via-chip">💓 Prima Viva</span>'
+        '<span class="via-chip">👨‍👩‍👧 Gemelo Familiar</span>'
+        '<span class="via-chip">🌊 Momentos de Vida</span>'
+        '<span class="via-chip">🔗 Certificados de Destino</span>',
         unsafe_allow_html=True,
     )
     st.write("")

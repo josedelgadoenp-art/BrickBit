@@ -5,7 +5,7 @@ import datetime
 import streamlit as st
 
 from core import goals as g
-from core import ui
+from core import ledger, ui
 from core.gamification import completar_mision
 from core.state import perfil
 
@@ -71,6 +71,14 @@ def render() -> None:
                 st.metric("Aporte mensual GNP", ui.dinero(m["aporte_mensual"]))
                 st.caption(f"vía **{m['producto']['icono']} {m['producto']['nombre']}** ({m['producto']['tipo']})")
             with e:
+                if m.get("financiada"):
+                    st.markdown("🔗✅")
+                    st.caption("Blindada")
+                elif st.button("🔗", key=f"fund_{i}", help="Blindar meta y acuñar Certificado de Destino"):
+                    m["financiada"] = True
+                    ledger.acunar(m, p)
+                    completar_mision("certificado")
+                    st.rerun()
                 if st.button("🗑️", key=f"del_{i}", help="Quitar meta"):
                     metas.pop(i)
                     st.rerun()
@@ -99,6 +107,38 @@ def render() -> None:
             "Un asesor humano puede reestructurarlo contigo en una llamada.",
             icon="🧮",
         )
+
+    # --- certificados de destino (hash-chain) --------------------------------------
+    chain = ledger.cadena()
+    st.markdown("#### 🔗 Certificados de Destino")
+    if not chain:
+        st.caption(
+            "Cuando blindas una meta (botón 🔗 en cada meta), se acuña un **Certificado de Destino**: "
+            "un bloque encadenado por hash SHA-256, inmutable y verificable. Tu logro deja de ser una "
+            "promesa y se vuelve un activo que puedes compartir."
+        )
+    else:
+        ok, n = ledger.verificar()
+        c1, c2 = st.columns([3, 1])
+        with c1:
+            st.markdown(f"**{len(chain)} certificado(s)** en tu cadena de destino:")
+            for b in chain:
+                st.markdown(
+                    f"<div class='via-card'><h4>{b['icono']} Bloque #{b['indice']} · {b['meta']}</h4>"
+                    f"<p>${b['monto_blindado']:,.0f} blindados para {b['anio_objetivo']} vía {b['vehiculo']}<br>"
+                    f"<code style='font-size:.72rem'>{b['hash'][:48]}…</code></p></div>",
+                    unsafe_allow_html=True,
+                )
+                st.write("")
+        with c2:
+            if ok:
+                st.success(f"Cadena íntegra ✓ ({n} bloques verificados)", icon="🔐")
+            else:
+                st.error(f"¡Cadena alterada en el bloque {n}!", icon="🚨")
+            st.download_button("⬇️ Último certificado", ledger.certificado_md(chain[-1]),
+                               file_name=f"certificado_destino_{chain[-1]['indice']}.md",
+                               width="stretch")
+            st.caption("Compártelo: cada certificado es marketing orgánico de tus logros.")
 
     if st.button("🤝 Enviar mi mapa de sueños a un asesor GNP", type="primary"):
         ss["_nav"] = "handoff"
