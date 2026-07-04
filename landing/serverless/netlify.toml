@@ -1,0 +1,9 @@
+# BrickBit · configuración mínima de Netlify
+# Coloca este archivo en la RAÍZ de tu sitio (junto a index.html / financial.html).
+# La carpeta netlify/functions/ debe quedar también en la raíz.
+
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"

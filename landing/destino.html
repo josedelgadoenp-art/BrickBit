@@ -157,7 +157,7 @@
 const CONFIG = {
   selfUrl:      "https://brickbit.co/destino",   // URL pública de ESTA página (para compartir)
   financialUrl: "/financial",                    // tu buscador de seguro ideal
-  leadEndpoint: "",                              // opcional: mismo endpoint de leads
+  leadEndpoint: "/api/lead",                     // función Netlify (déjalo "" para desactivar)
   gaId:         "",
   privacyUrl:   ""
 };
@@ -199,8 +199,23 @@ function myRefCode(){
   if(!c){ c=Math.random().toString(36).slice(2,8).toUpperCase(); store.set('bb_ref_code',c); }
   return c;
 }
+/* ---- registro de eventos en tu hoja (vía función Netlify) ---- */
+function sendLead(payload){
+  if(!CONFIG.leadEndpoint) return;
+  try{
+    fetch(CONFIG.leadEndpoint,{
+      method:"POST", keepalive:true,
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    }).catch(()=>{});
+  }catch(e){}
+}
+
 const refFrom=new URLSearchParams(location.search).get('ref')||"";
-if(refFrom) track('llegada_por_referido',{ref:refFrom});
+if(refFrom){
+  track('llegada_por_referido',{ref:refFrom});
+  sendLead({tipo:"evento",evento:"llegada_referido",ref:refFrom,origen:"destino"});
+}
 
 /* ============================================================
    MODELO
@@ -406,6 +421,8 @@ function renderResult(){
   phase="result"; setProg(null);
   R=calc();
   track('destino_resultado',{score:R.score,pct:R.pct,arquetipo:R.arq.n,ref:refFrom});
+  sendLead({tipo:"evento",evento:"resultado",score:R.score,arquetipo:R.arq.n,percentil:R.pct,ref:refFrom,origen:"destino",
+            extra:`edad ${ans.edad} · deps ${ans.deps} · valor ${fmtCard(R.vv)}`});
   const anio70=new Date().getFullYear()+(70-ans.edad);
   const gastoMed=fmtCorto(650000);
   const refCode=myRefCode();
@@ -499,7 +516,10 @@ function renderResult(){
   document.getElementById('shareBtn').addEventListener('click',()=>shareCard(shareTxt,shareUrl));
   document.getElementById('waShare').addEventListener('click',()=>track('destino_share_wa'));
   document.getElementById('fullBtn').addEventListener('click',()=>track('destino_a_financial'));
-  document.getElementById('waAgente').addEventListener('click',()=>track('destino_wa_agente'));
+  document.getElementById('waAgente').addEventListener('click',()=>{
+    track('destino_wa_agente');
+    sendLead({tipo:"evento",evento:"click_whatsapp_agente",score:R.score,arquetipo:R.arq.n,percentil:R.pct,ref:refFrom,origen:"destino"});
+  });
   document.getElementById('copyBtn').addEventListener('click',()=>{
     const inp=document.getElementById('refInput');
     inp.select(); inp.setSelectionRange(0,120);
