@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Permiso de micrófono · Copiloto GNP</title>
+  <style>
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      max-width: 520px;
+      margin: 60px auto;
+      padding: 0 20px;
+      color: #1b2a4a;
+      text-align: center;
+    }
+    h1 { font-size: 20px; }
+    p { line-height: 1.5; color: #5f6368; }
+    button {
+      background: #f26722;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #resultado { margin-top: 18px; font-weight: 700; }
+    #resultado.ok { color: #228b54; }
+    #resultado.error { color: #c83434; }
+    #resultado code {
+      display: inline-block;
+      background: #f1f3f4;
+      color: #1b2a4a;
+      padding: 2px 6px;
+      border-radius: 6px;
+      user-select: all;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎙️ Activar micrófono del Copiloto GNP</h1>
+  <p>
+    El panel lateral necesita permiso para usar tu micrófono y transcribir la llamada.
+    Haz clic en el botón y luego elige <strong>«Permitir»</strong> en el diálogo de Chrome.
+  </p>
+  <button id="pedir">Conceder permiso de micrófono</button>
+  <p id="resultado"></p>
+  <script src="js/permission.js"></script>
+</body>
+</html>

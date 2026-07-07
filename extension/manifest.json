@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "GNP Copiloto de Videollamada",
+  "version": "1.0.0",
+  "description": "Copiloto de venta consultiva GNP: guía de 10 preguntas, transcripción en vivo, análisis financiero con IA y PDF con la recomendación personalizada.",
+  "minimum_chrome_version": "114",
+  "permissions": ["storage", "sidePanel"],
+  "host_permissions": ["https://api.anthropic.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Abrir Copiloto GNP"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

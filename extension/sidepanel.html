@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Copiloto GNP</title>
+  <link rel="stylesheet" href="css/sidepanel.css" />
+</head>
+<body>
+  <header class="cabecera">
+    <div class="cabecera-titulo">
+      <span class="logo">GNP</span>
+      <div>
+        <h1>Copiloto de Videollamada</h1>
+        <p id="estado-texto" class="estado detenido">Micrófono apagado</p>
+      </div>
+    </div>
+    <div class="cabecera-acciones">
+      <button id="btn-mic" class="btn btn-mic" title="Iniciar / detener transcripción">🎙️ Escuchar</button>
+      <button id="btn-opciones" class="btn btn-icono" title="Opciones">⚙️</button>
+    </div>
+  </header>
+
+  <div id="aviso-consentimiento" class="aviso">
+    ⚖️ Recuerda informar al cliente que la llamada se transcribe para preparar su
+    análisis personalizado, y obtener su consentimiento antes de iniciar.
+    <button id="btn-cerrar-aviso" class="btn-cerrar">✕</button>
+  </div>
+
+  <div id="zona-error" class="error oculto"></div>
+
+  <main>
+    <section class="tarjeta">
+      <div class="fila-campos">
+        <label>Prospecto
+          <input id="nombre-prospecto" type="text" placeholder="Nombre del cliente" />
+        </label>
+        <label>Asesor
+          <input id="nombre-asesor" type="text" placeholder="Tu nombre" />
+        </label>
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <div class="seccion-encabezado">
+        <h2>Guía de 10 preguntas</h2>
+        <span id="progreso-preguntas" class="pastilla">0/10</span>
+      </div>
+      <ol id="lista-preguntas" class="lista-preguntas"></ol>
+    </section>
+
+    <section class="tarjeta">
+      <div class="seccion-encabezado">
+        <h2>Transcripción en vivo</h2>
+        <button id="btn-limpiar-transcript" class="btn btn-liga">limpiar</button>
+      </div>
+      <div id="transcript" class="transcript">
+        <p class="transcript-vacio">Activa el micrófono para empezar a transcribir…</p>
+      </div>
+      <p id="interim" class="interim"></p>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Notas generales</h2>
+      <textarea id="notas-generales" rows="3"
+        placeholder="Contexto extra: tono del cliente, señales de compra, acuerdos…"></textarea>
+    </section>
+
+    <section class="tarjeta acciones-finales">
+      <button id="btn-generar" class="btn btn-primario">✨ Generar asesoría con IA</button>
+      <button id="btn-nueva-sesion" class="btn btn-secundario">Nueva sesión</button>
+    </section>
+
+    <section id="resultado" class="tarjeta oculto">
+      <div class="seccion-encabezado">
+        <h2>Asesoría personalizada</h2>
+        <button id="btn-pdf" class="btn btn-primario">⬇️ Descargar PDF</button>
+      </div>
+      <div id="resultado-contenido"></div>
+    </section>
+  </main>
+
+  <script src="vendor/jspdf.umd.min.js"></script>
+  <script src="js/questions.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/claude.js"></script>
+  <script src="js/pdf.js"></script>
+  <script src="js/sidepanel.js"></script>
+</body>
+</html>

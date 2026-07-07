@@ -28,6 +28,15 @@ streamlit run streamlit_app.py
 Opcional — modo IA aumentada: define `ANTHROPIC_API_KEY` en el entorno o en
 `.streamlit/secrets.toml` para que VIA responda consultas libres con Claude.
 
+## 🎙️ Extensión de Chrome: Copiloto de Videollamada
+
+En [`extension/`](extension/README.md) vive el **Copiloto GNP para videollamadas**: una
+extensión de Chrome (panel lateral) que guía la llamada de venta con 10 preguntas de
+descubrimiento, transcribe en vivo (es-MX), y al terminar genera con Claude una asesoría
+personalizada —análisis financiero, producto GNP ideal o combinación, y presupuesto
+sugerido presentado **por quincena**— exportable a **PDF**. Ver instrucciones de
+instalación y uso en su [README](extension/README.md).
+
 ## Arquitectura
 
 ```
