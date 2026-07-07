@@ -1,15 +1,14 @@
-// Hadassah — asistente de voz dentro de la llamada.
+// Iris — asistente de voz dentro de la llamada.
 // Al escuchar su nombre en la transcripción, recopila la duda que sigue,
 // la consulta con Claude (catálogo GNP + búsqueda web) y responde en voz alta
 // con speechSynthesis. Mientras habla, el micrófono se ignora para no
 // transcribir su propia voz.
 
-// Variantes con las que el reconocedor suele transcribir "Hadassah".
-const HADASSAH_NOMBRES = [
-  "hadassah", "hadasah", "hadassa", "hadasa", "hadaza",
-  "adassah", "adasah", "adassa", "adasa",
-  "jadassah", "jadasa", "hada sa", "ada sa",
-];
+const NOMBRE_ASISTENTE = "Iris";
+
+// Variantes con las que el reconocedor suele transcribir "Iris". Se exige
+// frontera de palabra (\b) para no confundirla con partes de otras palabras.
+const ASISTENTE_WAKE = /\b(iris|iriss|irish|hiris|irix)\b/g;
 
 // Copia del texto sin acentos preservando la longitud (índices 1:1 con el original).
 function _sinAcentos(texto) {
@@ -17,18 +16,16 @@ function _sinAcentos(texto) {
 }
 
 // Devuelve { resto } (lo dicho después del nombre) o null si no se nombró.
-function detectarNombreHadassah(texto) {
+function detectarNombreAsistente(texto) {
   const t = _sinAcentos(String(texto)).toLowerCase();
-  let mejor = null;
-  for (const nombre of HADASSAH_NOMBRES) {
-    const idx = t.lastIndexOf(nombre);
-    if (idx !== -1 && (!mejor || idx > mejor.idx)) {
-      mejor = { idx, fin: idx + nombre.length };
-    }
-  }
-  if (!mejor) return null;
+  ASISTENTE_WAKE.lastIndex = 0;
+  let m,
+    ultimo = null;
+  while ((m = ASISTENTE_WAKE.exec(t)) !== null) ultimo = m;
+  if (!ultimo) return null;
+  const fin = ultimo.index + ultimo[0].length; // _sinAcentos preserva la longitud
   const resto = String(texto)
-    .slice(mejor.fin)
+    .slice(fin)
     .replace(/^[\s,.:;!¡]+/, "");
   return { resto };
 }
@@ -112,7 +109,7 @@ class HadassahVoz {
       this._reprogramar();
       return;
     }
-    const det = detectarNombreHadassah(texto);
+    const det = detectarNombreAsistente(texto);
     if (!det) return;
     this._pregunta = det.resto.trim();
     this._setEstado("recolectando");
@@ -163,7 +160,7 @@ class HadassahVoz {
     try {
       respuesta = await this.consultar(pregunta, tipo);
     } catch (err) {
-      this.onError("Hadassah no pudo responder: " + err.message);
+      this.onError(NOMBRE_ASISTENTE + " no pudo responder: " + err.message);
       this._setEstado("esperando");
       return;
     }

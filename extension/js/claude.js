@@ -319,7 +319,7 @@ function construirMensajeUsuario(sesion) {
 
   if ((sesion.hadassah || []).length) {
     partes.push(
-      "\n=== DUDAS QUE HADASSAH (ASISTENTE DE VOZ) RESPONDIÓ DURANTE LA LLAMADA ==="
+      "\n=== DUDAS QUE IRIS (ASISTENTE DE VOZ) RESPONDIÓ DURANTE LA LLAMADA ==="
     );
     for (const x of sesion.hadassah.slice(-10)) {
       partes.push(`Duda: ${x.pregunta}\nRespuesta dada: ${x.respuesta}`);
@@ -528,7 +528,7 @@ async function generarAsesoria(sesion, { apiKey, modelo }) {
 // ---------------------------------------------------------------------------
 function construirSystemHadassah(sesion) {
   const prospecto = sesion.nombreProspecto || "el prospecto";
-  return `Eres Hadassah, la asistente de voz de GNP que participa EN VIVO en una videollamada \
+  return `Eres Iris, la asistente de voz de GNP que participa EN VIVO en una videollamada \
 entre un asesor GNP y ${prospecto}. Te acaban de hacer una pregunta en voz alta y tu respuesta \
 se leerá con un sintetizador de voz frente al cliente.
 
@@ -552,7 +552,7 @@ cuando tenga sentido (por ejemplo: "...y aquí su asesor puede afinarlo a tu cas
 
 function construirSystemObjecion(sesion) {
   const prospecto = sesion.nombreProspecto || "el prospecto";
-  return `Eres Hadassah, coach de ventas de GNP. El asesor está EN VIVO con ${prospecto} y \
+  return `Eres Iris, coach de ventas de GNP. El asesor está EN VIVO con ${prospecto} y \
 te reporta una objeción del cliente. Tu respuesta es SOLO para el asesor (no se dice en voz \
 alta al cliente): dale un guion breve para rebatir con inteligencia y empatía.
 

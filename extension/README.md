@@ -39,15 +39,15 @@ productos y su metodología de auditoría (VIA).
 6. Al terminar, pulsa **✨ Generar asesoría con IA** → revisa el resultado en el panel
 7. Pulsa **⬇️ Descargar PDF** y compártelo con el cliente
 
-## 💜 Hadassah — la asistente de voz en la llamada
+## 💜 Iris — la asistente de voz en la llamada
 
-Hadassah participa en la conversación: cuando cualquiera dice **«Hadassah»** seguido de
-una duda («Hadassah, ¿qué es un deducible?», «Hadassah, ¿cuánto vale la UDI hoy?»),
+Iris participa en la conversación: cuando cualquiera dice **«Iris»** seguido de
+una duda («Iris, ¿qué es un deducible?», «Iris, ¿cuánto vale la UDI hoy?»),
 ella recopila la pregunta, la resuelve con Claude —**puede buscar activamente en la web**
 (herramienta de búsqueda del API) y consulta el **catálogo GNP**— y **responde con voz**
 en español mediante el sintetizador del navegador.
 
-- Reconoce variantes de pronunciación que produce el reconocedor («Hadasa», «Jadasa»…)
+- «Iris» es un nombre corto y claro que el reconocedor de voz transcribe de forma confiable
 - Mientras habla, el micrófono se ignora para no transcribir su propia voz
 - También puedes escribirle la duda en su campo de texto del panel
 - El interruptor «activa» la enciende/apaga; el botón 🔇 la calla al instante
@@ -56,16 +56,16 @@ en español mediante el sintetizador del navegador.
 
 ### Tres modos de ayuda
 
-Hadassah distingue automáticamente qué le pides:
+Iris distingue automáticamente qué le pides:
 
 1. **🤫 Modo privado (apuntadora).** Con el selector «Responde: Privada (solo tú)»,
-   Hadassah **no habla**: muestra la respuesta como texto en el panel para que solo tú
+   Iris **no habla**: muestra la respuesta como texto en el panel para que solo tú
    la leas y la digas con tus palabras. «En voz alta» la deja sonar para el cliente.
-2. **🧮 Calculadora y proyecciones en vivo.** «Hadassah, ¿cuánto es el 10% de 45 mil?»,
+2. **🧮 Calculadora y proyecciones en vivo.** «Iris, ¿cuánto es el 10% de 45 mil?»,
    «45 mil al mes en quincenal», «proyecta 500 al mes a 20 años al 8%». Hace la cuenta
    **localmente** (exacta e instantánea, sin usar el API) y te da el resultado, incluyendo
    la conversión a quincenal para enmarcar la prima.
-3. **🛡️ Manejo de objeciones.** «Hadassah, el cliente dice que está caro», «lo va a
+3. **🛡️ Manejo de objeciones.** «Iris, el cliente dice que está caro», «lo va a
    pensar», «ya tiene el del trabajo»… Te da un **guion de rebate** usando los números
    del propio prospecto. Estas respuestas **siempre son privadas** (nunca se dicen en voz
    alta) para que el cliente no escuche cómo lo estás rebatiendo.
@@ -81,20 +81,24 @@ micrófono también captura la voz del cliente. Si usas **audífonos**, parafras
 respuestas clave («perfecto, entonces son dos hijos de 5 y 8 años…») — además de
 alimentar la transcripción, es una excelente técnica de venta consultiva.
 
-## Las 10 preguntas
+## Las 10 preguntas (Mapa de Ruta Financiera)
+
+Guion consultivo de BrickBit; captura la mentalidad y el perfil de riesgo, no solo cifras.
 
 | # | Tema | Qué captura |
 |---|------|-------------|
-| 1 | Datos básicos | Nombre, edad, ocupación, zona |
-| 2 | Familia | Dependientes económicos y edades |
-| 3 | Ingresos | Ingreso mensual del hogar |
-| 4 | Gastos | Gasto mensual, deudas y compromisos |
-| 5 | Patrimonio | Ahorro, inversiones, bienes propios |
-| 6 | Salud | Estado general, hábitos, antecedentes |
-| 7 | Protección actual | Seguros vigentes y sumas aseguradas |
-| 8 | Metas | Sueños con horizonte de tiempo |
-| 9 | Prioridad | Qué blindaría primero / qué le quita el sueño |
-| 10 | Presupuesto | Monto mensual/quincenal cómodo |
+| 1 | Visión a 10–15 años | Sueños y metas; el «con quién» revela familia/dependientes |
+| 2 | Foco y motivación | Ocupación/negocio, proyecto principal, motor emocional |
+| 3 | Perfil de inversión | Apetito de riesgo (conservador/moderado/agresivo) |
+| 4 | Crédito y deuda | Deudas actuales y postura ante el crédito |
+| 5 | Reacción ante imprevistos | Metáfora de la cumbre: prudencia vs. riesgo |
+| 6 | Ante una crisis | Tolerancia real a la volatilidad |
+| 7 | Colchón / independencia | Meses de fondo de emergencia |
+| 8 | Salud y GMM | Gastos médicos mayores vigentes y salud |
+| 9 | Capacidad de ahorro | % de ingreso que ahorra/invierte |
+| 10 | Legado y protección | Dependientes, vida vigente, testamento/fideicomiso |
+
+El perfil de riesgo se deduce de las preguntas 3, 5 y 6, y afina la recomendación de producto.
 
 ## Arquitectura
 
@@ -109,7 +113,7 @@ extension/
     speech.js          # transcripción Web Speech API es-MX con auto-reinicio
     calculadora.js     # cálculos financieros locales (%, quincenal, proyecciones)
     hadassah.js        # asistente de voz: wake word, modo privado, objeciones, TTS
-    claude.js          # API de Claude: asesoría (streaming + JSON) y Hadassah (web search)
+    claude.js          # API de Claude: asesoría (streaming + JSON) y Iris (web search)
     pdf.js             # generación del PDF de asesoría (jsPDF)
     sidepanel.js       # controlador: estado, persistencia, render
   vendor/jspdf.umd.min.js

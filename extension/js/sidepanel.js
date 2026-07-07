@@ -306,10 +306,10 @@ async function alternarMicrofono() {
 // Hadassah — asistente de voz
 // ---------------------------------------------------------------------------
 const HADASSAH_ESTADOS = {
-  esperando: "Di «Hadassah» seguido de la duda y responderá.",
-  recolectando: "🎤 Hadassah te escucha… haz la pregunta.",
-  pensando: "💭 Hadassah está pensando (puede buscar en la web)…",
-  hablando: "🔊 Hadassah está respondiendo en voz alta…",
+  esperando: "Di «Iris» seguido de la duda y responderá.",
+  recolectando: "🎤 Iris te escucha… haz la pregunta.",
+  pensando: "💭 Iris está pensando (puede buscar en la web)…",
+  hablando: "🔊 Iris está respondiendo en voz alta…",
   privado: "📝 Respuesta lista abajo (privada, no se dijo en voz alta).",
 };
 
