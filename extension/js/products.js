@@ -1,12 +1,10 @@
 // Catálogo de soluciones GNP para el análisis y para Hadassah.
 //
-// Datos tomados de gnp.com.mx (2026-07): Trasciende, Proyecta, Capitaliza,
-// Vida Vive, el Básico Estandarizado de Vida y el Auto Accesible (RC básica)
-// traen coberturas, sumas y notas fiscales REALES de las páginas oficiales.
-// Solo gastos médicos (Línea Azul) y hogar quedan como REFERENCIALES
-// —marcados con `referencial: true`— hasta contar con su URL oficial. En todos
-// los casos, primas y condiciones exactas dependen de la cotización oficial de
-// GNP; nunca se presentan como oferta.
+// Datos tomados de las páginas oficiales de gnp.com.mx (2026-07): los ocho
+// productos traen coberturas, sumas y notas fiscales REALES. El flag
+// `referencial: true` se reserva para entradas sin fuente oficial (hoy
+// ninguna). En todos los casos, las primas y condiciones exactas dependen de
+// la cotización oficial de GNP; nunca se presentan como oferta.
 
 const CATALOGO_GNP = {
   trasciende: {
@@ -52,12 +50,12 @@ const CATALOGO_GNP = {
     icono: "🪶",
   },
   linea_azul: {
-    nombre: "GNP Línea Azul",
+    nombre: "GNP Línea Azul (Platino)",
     tipo: "Gastos Médicos Mayores",
     pilar: "salud",
     desc:
-      "Gastos médicos mayores de GNP con red hospitalaria amplia, deducible y coaseguro configurables y opción de cobertura internacional. Recibe el golpe económico de una enfermedad o accidente mayor en vez del paciente.",
-    referencial: true,
+      "Gastos médicos mayores con cobertura nacional en todos los hospitales y protección en el extranjero por emergencias. Cubre consultas, cirugías, sala de operaciones, laboratorio y medicamentos; maternidad sin deducible ni coaseguro y recién nacido gratis hasta la siguiente renovación. Coaseguro topado sin importar el nivel hospitalario. Incluye Línea GNP (asesoría 24/7), Médica Móvil para urgencias, asistencia en viajes (repatriación, hospedaje por convalecencia) y reconocimiento de lealtad (cubre preexistencias a partir del 5° año). Prima deducible de impuestos. Para personas de 0 a 70 años (65-70 con estudios médicos).",
+    fiscal: "Prima deducible de impuestos (gastos médicos).",
     icono: "🏥",
   },
   autos: {
@@ -69,12 +67,11 @@ const CATALOGO_GNP = {
     icono: "🚗",
   },
   hogar: {
-    nombre: "GNP Hogar",
-    tipo: "Patrimonio (hogar)",
+    nombre: "Hogar Versátil",
+    tipo: "Patrimonio (casa habitación)",
     pilar: "patrimonio",
     desc:
-      "Protección del inmueble y sus contenidos ante sismo, incendio, robo e imprevistos. Blinda el patrimonio familiar.",
-    referencial: true,
+      "Seguro de casa habitación integral para propietarios e inquilinos. Cubre incendio/rayo/explosión (todo riesgo), robo (contenidos, obras de arte, joyas), cristales, equipo electrónico y aparatos, bienes en exteriores (albercas, paneles solares) y desastres naturales sin restricción de zona (huracán, inundación, sismo, erupción). Incluye responsabilidad civil familiar y de empleados domésticos, y asistencias al hogar (plomero, cerrajero, electricista, vidriero, orientación legal) y médica familiar. Valuación del inmueble hasta 30 millones de pesos. Incluye protección para mascotas: asistencia veterinaria telefónica, apoyo por mascota extraviada y servicios funerarios opcionales.",
     icono: "🏠",
   },
 };

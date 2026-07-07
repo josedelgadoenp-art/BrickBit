@@ -133,8 +133,8 @@ extension/
 - 💵 **No es cotización**: los montos que produce la IA son *presupuestos sugeridos de
   protección* con base en la capacidad y comodidad del cliente. La prima real depende
   de la tarificación y suscripción oficiales de GNP.
-- 🧪 **Catálogo GNP**: los datos de **Trasciende, Proyecta, Capitaliza y Vida Vive** se
-  tomaron de las páginas oficiales de gnp.com.mx (coberturas, sumas aseguradas, plazos y
-  notas fiscales reales). **Línea Azul (GMM), Autos y Hogar** siguen como *referenciales*
-  (marcados en el código con `referencial: true`) hasta contar con su URL oficial. En todos
-  los casos, las primas y condiciones exactas dependen de la cotización oficial de GNP.
+- 🧪 **Catálogo GNP**: los **8 productos** (Línea Azul/GMM Platino, Trasciende, Proyecta,
+  Capitaliza, Vida Vive, Básico Estandarizado de Vida, Auto Accesible y Hogar Versátil) se
+  tomaron de las **páginas oficiales de gnp.com.mx** (coberturas, sumas aseguradas, plazos y
+  notas fiscales reales). Las primas y condiciones exactas dependen de la cotización oficial
+  de GNP; la herramienta nunca las presenta como oferta.
