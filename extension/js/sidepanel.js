@@ -14,10 +14,13 @@ const SESION_VACIA = () => ({
   notasGenerales: "",
   asesoria: null,
   avisoCerrado: false,
+  hadassahActiva: true,
+  hadassah: [], // [{pregunta, respuesta, hora}]
 });
 
 let sesion = SESION_VACIA();
 let transcriptor = null;
+let hadassah = null;
 let guardadoTimer = null;
 let revLocal = null; // última revisión escrita por ESTE panel (para ignorar el eco)
 
@@ -225,6 +228,8 @@ function renderTranscript() {
 }
 
 function alSegmentoFinal(texto, preguntaId) {
+  // Mientras Hadassah habla, lo que capta el micrófono es su propia voz.
+  if (hadassah?.debeIgnorarAudio()) return;
   const id =
     preguntaId || PREGUNTAS[sesion.preguntaActiva]?.id || PREGUNTAS[0].id;
   sesion.transcript.push({
@@ -238,6 +243,7 @@ function alSegmentoFinal(texto, preguntaId) {
   sesion.transcriptPorPregunta[id].push(texto);
   guardarSesion();
   renderTranscript();
+  hadassah?.procesarSegmento(texto);
 }
 
 function crearTranscriptor() {
@@ -293,6 +299,69 @@ async function alternarMicrofono() {
     return;
   }
   transcriptor.iniciar();
+}
+
+// ---------------------------------------------------------------------------
+// Hadassah — asistente de voz
+// ---------------------------------------------------------------------------
+const HADASSAH_ESTADOS = {
+  esperando: "Di «Hadassah» seguido de la duda y responderá con voz.",
+  recolectando: "🎤 Hadassah te escucha… haz la pregunta.",
+  pensando: "💭 Hadassah está pensando (puede buscar en la web)…",
+  hablando: "🔊 Hadassah está respondiendo…",
+};
+
+function renderHadassah() {
+  const historial = sesion.hadassah || [];
+  const cont = $("#hadassah-historial");
+  cont.classList.toggle("oculto", !historial.length);
+  cont.innerHTML = "";
+  for (const x of historial.slice(-6)) {
+    const div = document.createElement("div");
+    div.className = "hadassah-qa";
+    const q = document.createElement("p");
+    q.className = "q";
+    q.textContent = "« " + x.pregunta + " »";
+    const r = document.createElement("p");
+    r.className = "r";
+    r.textContent = x.respuesta;
+    div.append(q, r);
+    cont.appendChild(div);
+  }
+  cont.scrollTop = cont.scrollHeight;
+}
+
+function crearHadassah() {
+  return new HadassahVoz({
+    consultar: async (pregunta) => {
+      const { apiKey, modelo } = await chrome.storage.local.get(["apiKey", "modelo"]);
+      return preguntarHadassah(pregunta, sesion, { apiKey, modelo });
+    },
+    onEstado: (estado) => {
+      const el = $("#hadassah-estado");
+      el.textContent = HADASSAH_ESTADOS[estado] || "";
+      el.classList.toggle("trabajando", estado !== "esperando");
+    },
+    onIntercambio: (pregunta, respuesta) => {
+      sesion.hadassah = sesion.hadassah || [];
+      sesion.hadassah.push({
+        pregunta,
+        respuesta,
+        hora: new Date().toISOString(),
+      });
+      guardarAhora();
+      renderHadassah();
+    },
+    onError: mostrarError,
+  });
+}
+
+async function preguntaManualHadassah() {
+  const input = $("#hadassah-input");
+  const pregunta = input.value.trim();
+  if (!pregunta || !hadassah || hadassah.ocupada) return;
+  input.value = "";
+  await hadassah.preguntar(pregunta);
 }
 
 // ---------------------------------------------------------------------------
@@ -421,10 +490,13 @@ function hayDatosQueProteger() {
 function nuevaSesion() {
   const asesor = sesion.nombreAsesor; // el nombre del asesor se conserva
   const avisoCerrado = sesion.avisoCerrado;
+  const hadassahActiva = sesion.hadassahActiva;
   transcriptor?.detener();
+  hadassah?.callar();
   sesion = SESION_VACIA();
   sesion.nombreAsesor = asesor;
   sesion.avisoCerrado = avisoCerrado;
+  sesion.hadassahActiva = hadassahActiva;
   guardarAhora();
   sincronizarUI();
 }
@@ -438,14 +510,30 @@ function sincronizarUI() {
   $("#notas-generales").value = sesion.notasGenerales;
   $("#aviso-consentimiento").classList.toggle("oculto", sesion.avisoCerrado);
   $("#interim").textContent = "";
+  $("#hadassah-toggle").checked = sesion.hadassahActiva !== false;
+  if (hadassah) hadassah.activa = sesion.hadassahActiva !== false;
   renderPreguntas();
   renderTranscript();
+  renderHadassah();
   renderResultado();
 }
 
 async function init() {
   await cargarSesion();
+  hadassah = crearHadassah();
   sincronizarUI();
+
+  $("#hadassah-toggle").addEventListener("change", (e) => {
+    sesion.hadassahActiva = e.target.checked;
+    hadassah.activa = e.target.checked;
+    if (!e.target.checked) hadassah.callar();
+    guardarSesion();
+  });
+  $("#hadassah-preguntar").addEventListener("click", preguntaManualHadassah);
+  $("#hadassah-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") preguntaManualHadassah();
+  });
+  $("#hadassah-callar").addEventListener("click", () => hadassah.callar());
 
   $("#btn-mic").addEventListener("click", alternarMicrofono);
   $("#btn-opciones").addEventListener("click", () => chrome.runtime.openOptionsPage());

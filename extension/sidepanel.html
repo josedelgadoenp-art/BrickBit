@@ -60,6 +60,26 @@
       <p id="interim" class="interim"></p>
     </section>
 
+    <section class="tarjeta tarjeta-hadassah">
+      <div class="seccion-encabezado">
+        <h2>💜 Hadassah — asistente de voz</h2>
+        <label class="interruptor">
+          <input id="hadassah-toggle" type="checkbox" checked />
+          <span>activa</span>
+        </label>
+      </div>
+      <p id="hadassah-estado" class="hadassah-estado">
+        Di «Hadassah» seguido de la duda y responderá con voz.
+      </p>
+      <div id="hadassah-historial" class="hadassah-historial oculto"></div>
+      <div class="hadassah-manual">
+        <input id="hadassah-input" type="text"
+          placeholder="…o escribe aquí la duda y pulsa Enter" />
+        <button id="hadassah-preguntar" class="btn btn-secundario">Preguntar</button>
+        <button id="hadassah-callar" class="btn btn-secundario" title="Detener la voz">🔇</button>
+      </div>
+    </section>
+
     <section class="tarjeta">
       <h2>Notas generales</h2>
       <textarea id="notas-generales" rows="3"
@@ -84,6 +104,7 @@
   <script src="js/questions.js"></script>
   <script src="js/products.js"></script>
   <script src="js/speech.js"></script>
+  <script src="js/hadassah.js"></script>
   <script src="js/claude.js"></script>
   <script src="js/pdf.js"></script>
   <script src="js/sidepanel.js"></script>

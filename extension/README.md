@@ -39,6 +39,25 @@ productos y su metodología de auditoría (VIA).
 6. Al terminar, pulsa **✨ Generar asesoría con IA** → revisa el resultado en el panel
 7. Pulsa **⬇️ Descargar PDF** y compártelo con el cliente
 
+## 💜 Hadassah — la asistente de voz en la llamada
+
+Hadassah participa en la conversación: cuando cualquiera dice **«Hadassah»** seguido de
+una duda («Hadassah, ¿qué es un deducible?», «Hadassah, ¿cuánto vale la UDI hoy?»),
+ella recopila la pregunta, la resuelve con Claude —**puede buscar activamente en la web**
+(herramienta de búsqueda del API) y consulta el **catálogo GNP**— y **responde con voz**
+en español mediante el sintetizador del navegador.
+
+- Reconoce variantes de pronunciación que produce el reconocedor («Hadasa», «Jadasa»…)
+- Mientras habla, el micrófono se ignora para no transcribir su propia voz
+- También puedes escribirle la duda en su campo de texto del panel
+- El interruptor «activa» la enciende/apaga; el botón 🔇 la calla al instante
+- Las dudas que respondió se incluyen en el análisis final como contexto
+- Nunca inventa primas ni condiciones: si le preguntan precios, remite a la cotización oficial
+
+**Para que el cliente la escuche**: reproduce su voz por tus **bocinas** — el micrófono
+de la llamada la captura y el cliente la oye como un participante más. (Con audífonos
+solo tú la escuchas, útil como apuntador privado.)
+
 ### 💡 Consejo sobre el audio
 
 El reconocimiento de voz usa tu micrófono. Si escuchas la llamada por **bocinas**, el
@@ -72,7 +91,8 @@ extension/
     questions.js       # guía de 10 preguntas (guion + qué capturar)
     products.js        # catálogo GNP (portado de core/products.py)
     speech.js          # transcripción Web Speech API es-MX con auto-reinicio
-    claude.js          # llamada al API de Claude con salida JSON estructurada
+    hadassah.js        # asistente de voz: wake word, recolección de la duda y TTS
+    claude.js          # API de Claude: asesoría (streaming + JSON) y Hadassah (web search)
     pdf.js             # generación del PDF de asesoría (jsPDF)
     sidepanel.js       # controlador: estado, persistencia, render
   vendor/jspdf.umd.min.js

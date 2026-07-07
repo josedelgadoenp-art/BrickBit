@@ -299,6 +299,15 @@ function construirMensajeUsuario(sesion) {
     partes.push(sesion.notasGenerales);
   }
 
+  if ((sesion.hadassah || []).length) {
+    partes.push(
+      "\n=== DUDAS QUE HADASSAH (ASISTENTE DE VOZ) RESPONDIÓ DURANTE LA LLAMADA ==="
+    );
+    for (const x of sesion.hadassah.slice(-10)) {
+      partes.push(`Duda: ${x.pregunta}\nRespuesta dada: ${x.respuesta}`);
+    }
+  }
+
   partes.push(
     "\nGenera la asesoría completa y personalizada en el formato JSON solicitado."
   );
@@ -369,6 +378,37 @@ function _normalizarAsesoria(a) {
 }
 
 const _ESPERA = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const _CABECERAS = (apiKey) => ({
+  "content-type": "application/json",
+  "x-api-key": apiKey,
+  "anthropic-version": "2023-06-01",
+  "anthropic-dangerous-direct-browser-access": "true",
+});
+
+async function _lanzarErrorHTTP(res) {
+  const requestId = res.headers.get("request-id");
+  let detalle = "";
+  try {
+    const errBody = await res.json();
+    detalle = errBody?.error?.message || "";
+  } catch (_) {
+    /* cuerpo no-JSON */
+  }
+  console.error(`API ${res.status}`, { requestId, detalle });
+  const mensajes = {
+    401: "API key inválida o revocada. Revisa las opciones de la extensión.",
+    403: "La API key no tiene permisos para este modelo.",
+    404: "Modelo no encontrado. Revisa el modelo configurado en opciones.",
+    413: "La sesión es demasiado grande para el API. Recorta la transcripción o las notas.",
+    429: "Límite de uso alcanzado. Espera un momento y vuelve a intentar.",
+    529: "El API está saturado. Espera unos segundos y vuelve a intentar.",
+  };
+  throw new Error(
+    (mensajes[res.status] || `Error ${res.status} del API.`) +
+      (detalle ? ` (${detalle})` : "")
+  );
+}
 
 async function generarAsesoria(sesion, { apiKey, modelo }) {
   if (!apiKey) {
@@ -463,4 +503,96 @@ async function generarAsesoria(sesion, { apiKey, modelo }) {
     });
     throw new Error("No se pudo interpretar la respuesta del modelo como JSON.");
   }
+}
+
+// ---------------------------------------------------------------------------
+// Hadassah: respuestas de voz durante la llamada (catálogo GNP + búsqueda web)
+// ---------------------------------------------------------------------------
+function construirSystemHadassah(sesion) {
+  const prospecto = sesion.nombreProspecto || "el prospecto";
+  return `Eres Hadassah, la asistente de voz de GNP que participa EN VIVO en una videollamada \
+entre un asesor GNP y ${prospecto}. Te acaban de hacer una pregunta en voz alta y tu respuesta \
+se leerá con un sintetizador de voz frente al cliente.
+
+CATÁLOGO GNP DE REFERENCIA:
+${catalogoComoTexto()}
+
+REGLAS DE RESPUESTA:
+1. Máximo 80 palabras. Es una respuesta HABLADA: prosa natural, sin listas, sin markdown, \
+sin asteriscos, sin encabezados. Español mexicano cálido, claro y profesional.
+2. Si la duda es sobre un producto GNP, usa el catálogo de referencia. Nunca inventes primas, \
+precios ni condiciones de contrato: si preguntan un precio, explica que depende de la \
+cotización oficial y del perfil.
+3. Puedes usar la búsqueda web para datos actuales (tipos de cambio, UDIs, inflación, reglas \
+fiscales como el Art. 151 LISR, comparativas del sector). Si buscaste, di brevemente de dónde \
+viene el dato ("según datos recientes de...").
+4. Si no sabes o el dato es delicado (médico, legal, fiscal complejo), dilo con honestidad y \
+sugiere confirmarlo después de la llamada.
+5. No repitas la pregunta; ve directo a la respuesta. Cierra devolviendo la palabra al asesor \
+cuando tenga sentido (por ejemplo: "...y aquí su asesor puede afinarlo a tu caso").`;
+}
+
+async function preguntarHadassah(pregunta, sesion, { apiKey, modelo }) {
+  if (!apiKey) {
+    throw new Error(
+      "Falta la API key de Anthropic. Configúrala en las opciones de la extensión."
+    );
+  }
+
+  let contexto = "";
+  const notas = Object.values(sesion.notasPregunta || {})
+    .filter(Boolean)
+    .join(" · ");
+  if (sesion.nombreProspecto || notas) {
+    contexto =
+      "Contexto de la llamada (úsalo solo si ayuda): " +
+      (sesion.nombreProspecto ? `prospecto ${sesion.nombreProspecto}. ` : "") +
+      (notas ? `Notas del asesor: ${notas}` : "");
+    contexto = contexto.slice(0, 900) + "\n\n";
+  }
+
+  let mensajes = [
+    { role: "user", content: contexto + "Pregunta dicha en voz alta: " + pregunta },
+  ];
+
+  // La búsqueda web corre en el servidor; si agota su ciclo, el API devuelve
+  // pause_turn y hay que reenviar la conversación para que continúe.
+  for (let vuelta = 0; vuelta < 4; vuelta++) {
+    let res;
+    try {
+      res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: _CABECERAS(apiKey),
+        body: JSON.stringify({
+          model: modelo || MODELO_DEFAULT,
+          max_tokens: 2000,
+          thinking: { type: "adaptive" },
+          output_config: { effort: "low" }, // respuesta de voz: prioriza latencia
+          system: construirSystemHadassah(sesion),
+          messages: mensajes,
+          tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 2 }],
+        }),
+      });
+    } catch (err) {
+      throw new Error("Error de red al contactar el API: " + err.message);
+    }
+    if (!res.ok) await _lanzarErrorHTTP(res);
+
+    const data = await res.json();
+    if (data.stop_reason === "pause_turn") {
+      mensajes = [mensajes[0], { role: "assistant", content: data.content }];
+      continue;
+    }
+    if (data.stop_reason === "refusal") {
+      throw new Error("no puede responder esa pregunta en la llamada.");
+    }
+    const texto = (data.content || [])
+      .filter((b) => b.type === "text")
+      .map((b) => b.text)
+      .join(" ")
+      .trim();
+    if (!texto) throw new Error("no obtuvo respuesta del modelo.");
+    return texto;
+  }
+  throw new Error("la búsqueda tardó demasiado. Intenta de nuevo.");
 }

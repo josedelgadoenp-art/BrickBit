@@ -32,10 +32,11 @@ Opcional — modo IA aumentada: define `ANTHROPIC_API_KEY` en el entorno o en
 
 En [`extension/`](extension/README.md) vive el **Copiloto GNP para videollamadas**: una
 extensión de Chrome (panel lateral) que guía la llamada de venta con 10 preguntas de
-descubrimiento, transcribe en vivo (es-MX), y al terminar genera con Claude una asesoría
-personalizada —análisis financiero, producto GNP ideal o combinación, y presupuesto
-sugerido presentado **por quincena**— exportable a **PDF**. Ver instrucciones de
-instalación y uso en su [README](extension/README.md).
+descubrimiento, transcribe en vivo (es-MX), incluye a **Hadassah** —asistente de voz que
+responde dudas en plena llamada con búsqueda web y el catálogo GNP— y al terminar genera
+con Claude una asesoría personalizada —análisis financiero, producto GNP ideal o
+combinación, y presupuesto sugerido presentado **por quincena**— exportable a **PDF**.
+Ver instrucciones de instalación y uso en su [README](extension/README.md).
 
 ## Arquitectura
 
