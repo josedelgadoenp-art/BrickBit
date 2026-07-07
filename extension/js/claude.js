@@ -264,9 +264,9 @@ REGLAS:
 1. Basa TODO en lo dicho en la llamada y las notas del asesor. No inventes datos.
 1b. Deduce perfil_riesgo (conservador / moderado / agresivo) a partir de las preguntas 3, 5 y 6 \
 (preferencia de inversión, reacción ante el imprevisto de la montaña y ante una crisis de mercado). \
-Alinéalo con la recomendación: un perfil conservador favorece ahorro garantizado (Consolida, \
-Trasciende) y protección; uno agresivo tolera vehículos indexados a mercado (Proyecta) además \
-de la protección base.
+Alinéalo con la recomendación: un perfil conservador favorece ahorro con valor asegurado \
+(Trasciende, Proyecta para retiro) y protección; uno agresivo tolera el ahorro indexado a \
+mercado (Capitaliza) además de la protección base. Usa solo claves del catálogo de arriba.
 2. El plan de pago es un PRESUPUESTO SUGERIDO de protección, no una cotización oficial de GNP. \
 Nunca presentes cifras como primas oficiales.
 3. Si el cliente declaró un monto con el que se siente cómodo, respétalo: la prima mensual \
