@@ -34,6 +34,7 @@ const ESQUEMA_ASESORIA = {
         "seguros_actuales",
         "metas",
         "prioridad",
+        "perfil_riesgo",
       ],
       properties: {
         nombre: { type: "string" },
@@ -60,6 +61,12 @@ const ESQUEMA_ASESORIA = {
         prioridad: {
           type: "string",
           enum: ["familia", "salud", "retiro", "patrimonio", "educacion", "equilibrio", "no_detectada"],
+        },
+        perfil_riesgo: {
+          type: "string",
+          description:
+            "Perfil de riesgo inferido de las preguntas 3, 5 y 6 (inversión, reacción ante imprevistos y ante una crisis)",
+          enum: ["conservador", "moderado", "agresivo", "no_detectado"],
         },
       },
     },
@@ -246,9 +253,20 @@ estructurada en 10 preguntas. Tu trabajo es producir la asesoría completa y per
 CATÁLOGO GNP DISPONIBLE (usa exclusivamente estas claves):
 ${catalogoComoTexto()}
 
+SOBRE LA GUÍA: las 10 preguntas son consultivas y evocativas (el "Mapa de Ruta Financiera"), \
+centradas en la mentalidad, las metas y el perfil de riesgo del prospecto. No preguntan cifras \
+de forma directa: los datos duros (edad, ingreso, gastos, ahorro, número de dependientes) \
+aparecen en las notas del asesor o se infieren de las respuestas (p. ej. la pregunta 9 da el % \
+de ahorro, la 7 los meses de colchón, la 1 y la 10 revelan dependientes). Úsalos cuando estén; \
+si un número realmente no se conoce, usa 0 y marca dato_faltante=true, sin inventar.
+
 REGLAS:
-1. Basa TODO en lo dicho en la llamada y las notas del asesor. No inventes datos: si un dato \
-no se mencionó, márcalo con dato_faltante=true y usa 0 en los campos numéricos correspondientes.
+1. Basa TODO en lo dicho en la llamada y las notas del asesor. No inventes datos.
+1b. Deduce perfil_riesgo (conservador / moderado / agresivo) a partir de las preguntas 3, 5 y 6 \
+(preferencia de inversión, reacción ante el imprevisto de la montaña y ante una crisis de mercado). \
+Alinéalo con la recomendación: un perfil conservador favorece ahorro garantizado (Consolida, \
+Trasciende) y protección; uno agresivo tolera vehículos indexados a mercado (Proyecta) además \
+de la protección base.
 2. El plan de pago es un PRESUPUESTO SUGERIDO de protección, no una cotización oficial de GNP. \
 Nunca presentes cifras como primas oficiales.
 3. Si el cliente declaró un monto con el que se siente cómodo, respétalo: la prima mensual \

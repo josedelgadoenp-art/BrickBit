@@ -435,6 +435,13 @@ function renderResultado() {
       </div>`);
   }
 
+  const pr = a.perfil?.perfil_riesgo;
+  if (pr && pr !== "no_detectado") {
+    html.push(
+      `<p class="pastilla-riesgo">Perfil de riesgo: ${esc(pr.charAt(0).toUpperCase() + pr.slice(1))}</p>`
+    );
+  }
+
   html.push(`
     <div class="producto-principal">
       <strong>${esc(infoProd.icono || "⭐")} ${esc(principal.nombre || infoProd.nombre || "")}</strong>

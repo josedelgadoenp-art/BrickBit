@@ -1,76 +1,89 @@
-// Guía de la videollamada: 10 preguntas de descubrimiento para venta consultiva GNP.
-// Cada pregunta trae un guion sugerido para el asesor y una pista de qué capturar.
-// Basadas en la auditoría VIA de GNP LifeOS (core/advisor.py).
+// Guía de la videollamada: las 10 preguntas del "Mapa de Ruta Financiera" de
+// BrickBit (en alianza con GNP Seguros). Guion consultivo centrado en la
+// mentalidad, las metas y el perfil de riesgo del prospecto; los datos duros
+// (ingreso, gastos, dependientes) el asesor los anota conforme surgen.
+// El "guion" es lo que el asesor lee/dice; la "captura" indica qué señal y qué
+// dato registrar.
 
 const PREGUNTAS = [
   {
-    id: "datos",
-    titulo: "1 · Datos básicos",
+    id: "vision",
+    titulo: "1 · Visión a 10–15 años",
     guion:
-      "Para empezar, cuéntame un poco de ti: ¿cómo te llamas, cuántos años tienes, a qué te dedicas y en qué ciudad vives?",
-    captura: "Nombre, edad, ocupación y ciudad/zona.",
+      "Si el dinero y el tiempo no fueran problema, ¿cómo te imaginas tu vida en 10 o 15 años? Platícame qué te gustaría estar haciendo, dónde te gustaría estar y con quién.",
+    captura:
+      "Sueños y metas de vida a 10–15 años. El «con quién» revela familia/dependientes y prioridades.",
   },
   {
-    id: "familia",
-    titulo: "2 · Familia y dependientes",
+    id: "motivacion",
+    titulo: "2 · Foco y motivación",
     guion:
-      "¿Quiénes dependen económicamente de ti hoy? (pareja, hijos y sus edades, papás…)",
-    captura: "Número de dependientes, edades de los hijos, situación de pareja.",
+      "De todos los proyectos que traes ahorita, ¿a cuál le estás metiendo más energía? Ya sea en tu trabajo, un negocio propio o metas familiares. ¿Qué es lo que más te motiva hoy?",
+    captura:
+      "Ocupación/negocio, proyecto principal y motor emocional del prospecto.",
   },
   {
-    id: "ingresos",
-    titulo: "3 · Ingresos",
+    id: "perfil_inversion",
+    titulo: "3 · Perfil de inversión",
     guion:
-      "Hablemos de flujo: ¿cuál es tu ingreso mensual aproximado? Todo queda entre nosotros.",
-    captura: "Ingreso mensual (y si es fijo o variable, uno o dos ingresos en el hogar).",
+      "Cuando piensas en hacer crecer tu dinero, ¿hacia dónde te inclinas de forma natural? ¿Te laten más los bienes raíces, la bolsa, meterle a tu negocio, o prefieres esquemas más conservadores?",
+    captura:
+      "Apetito de riesgo y preferencia de inversión: conservador, moderado o agresivo.",
   },
   {
-    id: "gastos",
-    titulo: "4 · Gastos y compromisos",
+    id: "deuda",
+    titulo: "4 · Crédito y deuda",
     guion:
-      "¿Y más o menos cuánto gastas al mes? ¿Tienes créditos o deudas que estés pagando?",
-    captura: "Gasto mensual, deudas (hipoteca, auto, tarjetas) y su mensualidad.",
+      "¿Cómo te llevas con los créditos y las deudas? ¿Eres de los que prefiere pagar todo de contado para vivir tranquilo, o usas los créditos para apalancarte y crecer?",
+    captura:
+      "Deudas actuales (hipoteca, auto, tarjetas) y postura ante el crédito.",
   },
   {
-    id: "patrimonio",
-    titulo: "5 · Ahorro y patrimonio",
+    id: "adversidad",
+    titulo: "5 · Reacción ante imprevistos",
     guion:
-      "¿Cuánto tienes ahorrado o invertido hoy? ¿La casa o el auto son propios?",
-    captura: "Ahorro/inversión total, bienes propios, fondo de emergencia.",
+      "Imaginemos que vas subiendo a una cumbre: llevas cinco horas de subida, ya sientes el cansancio y tu meta está a menos de un kilómetro. De pronto cae una tormenta fuerte y un deslave bloquea por completo el único sendero seguro. ¿Qué haces en ese momento? ¿Das media vuelta, buscas una ruta alternativa peligrosa, o buscas refugio?",
+    captura:
+      "Cómo reacciona ante lo inesperado: prudencia vs. riesgo. Refuerza el perfil de protección.",
+  },
+  {
+    id: "volatilidad",
+    titulo: "6 · Ante una crisis",
+    guion:
+      "Si hubiera otra crisis fuerte y tus inversiones o propiedades bajaran de valor de un día para otro, ¿qué harías? ¿Vendes rápido para no perder más, compras más porque está barato, o te quedas quieto a esperar?",
+    captura:
+      "Tolerancia real a la volatilidad; confirma el perfil de riesgo de la pregunta 3.",
+  },
+  {
+    id: "liquidez",
+    titulo: "7 · Colchón / independencia",
+    guion:
+      "Si por alguna razón mañana tuvieras que dejar de trabajar por completo, ¿cuánto tiempo podrías mantener tu estilo de vida actual? Con toda sinceridad, ¿cuántos meses aguantarían tus ahorros y activos antes de tener que hacer recortes drásticos?",
+    captura:
+      "Meses de colchón (fondo de emergencia). Indicio del ahorro acumulado y del gasto mensual.",
   },
   {
     id: "salud",
-    titulo: "6 · Salud y hábitos",
+    titulo: "8 · Salud y GMM",
     guion:
-      "Tu salud es tu primer activo: ¿cómo te sientes en general? ¿Fumas, haces ejercicio? ¿Algún antecedente médico tuyo o familiar?",
-    captura: "Estado de salud, fumador sí/no, ejercicio, antecedentes relevantes.",
+      "Sabemos que la salud es el motor de todo. Si enfrentaras una enfermedad fuerte, ¿tienes con qué defender tu cartera? ¿Te atenderías por tu cuenta, en el sistema público, o cuentas con una póliza fuerte de gastos médicos mayores que reciba el golpe por ti?",
+    captura:
+      "Gastos médicos mayores vigentes (sí/no y qué tan sólida), salud general y exposición médica.",
   },
   {
-    id: "proteccion",
-    titulo: "7 · Protección actual",
+    id: "ahorro",
+    titulo: "9 · Capacidad de ahorro",
     guion:
-      "¿Hoy cuentas con algún seguro? ¿De la empresa o personal? ¿Sabes de cuánto es la suma asegurada?",
-    captura: "Seguros vigentes (GMM, vida, auto), si son del trabajo, sumas aseguradas.",
+      "Para lograr toda esa tranquilidad de la que hablamos, ¿qué porcentaje de lo que ganas al mes estás logrando guardar o invertir realmente? Sé que a veces los gastos operativos nos comen, pero de tu 100%, ¿cuánto se va a construir tu futuro?",
+    captura:
+      "Porcentaje de ahorro/inversión mensual. Indicio del ingreso y de la capacidad real de aporte.",
   },
   {
-    id: "metas",
-    titulo: "8 · Metas de vida",
+    id: "legado",
+    titulo: "10 · Legado y protección",
     guion:
-      "Ahora lo importante: ¿qué quieres lograr en los próximos años? (educación de los hijos, retiro, casa, negocio…) ¿Para cuándo?",
-    captura: "Metas concretas con horizonte de tiempo (años) y costo estimado si lo menciona.",
-  },
-  {
-    id: "prioridad",
-    titulo: "9 · Preocupación principal",
-    guion:
-      "Si solo pudieras blindar UNA cosa de tu vida, ¿cuál sería? ¿Qué es lo que más te quita el sueño?",
-    captura: "Prioridad emocional: familia, salud, retiro, patrimonio, educación o equilibrio.",
-  },
-  {
-    id: "presupuesto",
-    titulo: "10 · Presupuesto cómodo",
-    guion:
-      "Última: pensando en protegerte, ¿qué cantidad podrías destinar al mes —o a la quincena— sin apretar tu presupuesto?",
-    captura: "Monto cómodo declarado (mensual o quincenal) y su reacción al hablar de dinero.",
+      "Tocando un tema un poco más delicado: si tú llegaras a faltar mañana, ¿qué pasaría con los tuyos? ¿Dejas broncas financieras, o tienes todo organizado —seguros, testamento, fideicomisos— para que el estilo de vida de tu familia y tus proyectos sigan adelante sin ti?",
+    captura:
+      "Dependientes, seguro de vida vigente, testamento/fideicomiso y patrimonio a proteger.",
   },
 ];

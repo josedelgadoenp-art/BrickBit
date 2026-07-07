@@ -265,6 +265,11 @@ function generarPDF(asesoria, { nombreAsesor = "" } = {}) {
   if (p.seguros_actuales) w.filaDato("Protección actual", p.seguros_actuales);
   if (p.prioridad && p.prioridad !== "no_detectada")
     w.filaDato("Prioridad declarada", ETIQUETA_PRIORIDAD[p.prioridad] || p.prioridad);
+  if (p.perfil_riesgo && p.perfil_riesgo !== "no_detectado")
+    w.filaDato(
+      "Perfil de riesgo",
+      p.perfil_riesgo.charAt(0).toUpperCase() + p.perfil_riesgo.slice(1)
+    );
   w.espacio(3);
 
   if (Array.isArray(p.metas) && p.metas.length) {
