@@ -15,7 +15,8 @@ const SESION_VACIA = () => ({
   asesoria: null,
   avisoCerrado: false,
   hadassahActiva: true,
-  hadassah: [], // [{pregunta, respuesta, hora}]
+  hadassahModo: "voz", // "voz" | "privada"
+  hadassah: [], // [{pregunta, respuesta, hora, tipo}]
 });
 
 let sesion = SESION_VACIA();
@@ -305,10 +306,16 @@ async function alternarMicrofono() {
 // Hadassah — asistente de voz
 // ---------------------------------------------------------------------------
 const HADASSAH_ESTADOS = {
-  esperando: "Di «Hadassah» seguido de la duda y responderá con voz.",
+  esperando: "Di «Hadassah» seguido de la duda y responderá.",
   recolectando: "🎤 Hadassah te escucha… haz la pregunta.",
   pensando: "💭 Hadassah está pensando (puede buscar en la web)…",
-  hablando: "🔊 Hadassah está respondiendo…",
+  hablando: "🔊 Hadassah está respondiendo en voz alta…",
+  privado: "📝 Respuesta lista abajo (privada, no se dijo en voz alta).",
+};
+
+const HADASSAH_BADGE = {
+  objecion: "🛡️ Guion para ti — no lo leas al cliente",
+  calculo: "🧮 Cálculo",
 };
 
 function renderHadassah() {
@@ -318,7 +325,13 @@ function renderHadassah() {
   cont.innerHTML = "";
   for (const x of historial.slice(-6)) {
     const div = document.createElement("div");
-    div.className = "hadassah-qa";
+    div.className = "hadassah-qa" + (x.tipo === "objecion" ? " es-objecion" : "");
+    if (HADASSAH_BADGE[x.tipo]) {
+      const badge = document.createElement("span");
+      badge.className = "hadassah-badge tipo-" + x.tipo;
+      badge.textContent = HADASSAH_BADGE[x.tipo];
+      div.appendChild(badge);
+    }
     const q = document.createElement("p");
     q.className = "q";
     q.textContent = "« " + x.pregunta + " »";
@@ -333,20 +346,21 @@ function renderHadassah() {
 
 function crearHadassah() {
   return new HadassahVoz({
-    consultar: async (pregunta) => {
+    consultar: async (pregunta, tipo) => {
       const { apiKey, modelo } = await chrome.storage.local.get(["apiKey", "modelo"]);
-      return preguntarHadassah(pregunta, sesion, { apiKey, modelo });
+      return preguntarHadassah(pregunta, sesion, { apiKey, modelo, tipo });
     },
     onEstado: (estado) => {
       const el = $("#hadassah-estado");
       el.textContent = HADASSAH_ESTADOS[estado] || "";
-      el.classList.toggle("trabajando", estado !== "esperando");
+      el.classList.toggle("trabajando", estado === "pensando" || estado === "hablando");
     },
-    onIntercambio: (pregunta, respuesta) => {
+    onIntercambio: (pregunta, respuesta, tipo) => {
       sesion.hadassah = sesion.hadassah || [];
       sesion.hadassah.push({
         pregunta,
         respuesta,
+        tipo: tipo || "normal",
         hora: new Date().toISOString(),
       });
       guardarAhora();
@@ -498,12 +512,14 @@ function nuevaSesion() {
   const asesor = sesion.nombreAsesor; // el nombre del asesor se conserva
   const avisoCerrado = sesion.avisoCerrado;
   const hadassahActiva = sesion.hadassahActiva;
+  const hadassahModo = sesion.hadassahModo;
   transcriptor?.detener();
   hadassah?.callar();
   sesion = SESION_VACIA();
   sesion.nombreAsesor = asesor;
   sesion.avisoCerrado = avisoCerrado;
   sesion.hadassahActiva = hadassahActiva;
+  sesion.hadassahModo = hadassahModo;
   guardarAhora();
   sincronizarUI();
 }
@@ -518,7 +534,11 @@ function sincronizarUI() {
   $("#aviso-consentimiento").classList.toggle("oculto", sesion.avisoCerrado);
   $("#interim").textContent = "";
   $("#hadassah-toggle").checked = sesion.hadassahActiva !== false;
-  if (hadassah) hadassah.activa = sesion.hadassahActiva !== false;
+  $("#hadassah-modo").value = sesion.hadassahModo || "voz";
+  if (hadassah) {
+    hadassah.activa = sesion.hadassahActiva !== false;
+    hadassah.modo = sesion.hadassahModo || "voz";
+  }
   renderPreguntas();
   renderTranscript();
   renderHadassah();
@@ -534,6 +554,11 @@ async function init() {
     sesion.hadassahActiva = e.target.checked;
     hadassah.activa = e.target.checked;
     if (!e.target.checked) hadassah.callar();
+    guardarSesion();
+  });
+  $("#hadassah-modo").addEventListener("change", (e) => {
+    sesion.hadassahModo = e.target.value;
+    hadassah.modo = e.target.value;
     guardarSesion();
   });
   $("#hadassah-preguntar").addEventListener("click", preguntaManualHadassah);

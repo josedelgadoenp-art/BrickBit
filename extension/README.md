@@ -54,6 +54,22 @@ en español mediante el sintetizador del navegador.
 - Las dudas que respondió se incluyen en el análisis final como contexto
 - Nunca inventa primas ni condiciones: si le preguntan precios, remite a la cotización oficial
 
+### Tres modos de ayuda
+
+Hadassah distingue automáticamente qué le pides:
+
+1. **🤫 Modo privado (apuntadora).** Con el selector «Responde: Privada (solo tú)»,
+   Hadassah **no habla**: muestra la respuesta como texto en el panel para que solo tú
+   la leas y la digas con tus palabras. «En voz alta» la deja sonar para el cliente.
+2. **🧮 Calculadora y proyecciones en vivo.** «Hadassah, ¿cuánto es el 10% de 45 mil?»,
+   «45 mil al mes en quincenal», «proyecta 500 al mes a 20 años al 8%». Hace la cuenta
+   **localmente** (exacta e instantánea, sin usar el API) y te da el resultado, incluyendo
+   la conversión a quincenal para enmarcar la prima.
+3. **🛡️ Manejo de objeciones.** «Hadassah, el cliente dice que está caro», «lo va a
+   pensar», «ya tiene el del trabajo»… Te da un **guion de rebate** usando los números
+   del propio prospecto. Estas respuestas **siempre son privadas** (nunca se dicen en voz
+   alta) para que el cliente no escuche cómo lo estás rebatiendo.
+
 **Para que el cliente la escuche**: reproduce su voz por tus **bocinas** — el micrófono
 de la llamada la captura y el cliente la oye como un participante más. (Con audífonos
 solo tú la escuchas, útil como apuntador privado.)
@@ -91,7 +107,8 @@ extension/
     questions.js       # guía de 10 preguntas (guion + qué capturar)
     products.js        # catálogo GNP (portado de core/products.py)
     speech.js          # transcripción Web Speech API es-MX con auto-reinicio
-    hadassah.js        # asistente de voz: wake word, recolección de la duda y TTS
+    calculadora.js     # cálculos financieros locales (%, quincenal, proyecciones)
+    hadassah.js        # asistente de voz: wake word, modo privado, objeciones, TTS
     claude.js          # API de Claude: asesoría (streaming + JSON) y Hadassah (web search)
     pdf.js             # generación del PDF de asesoría (jsPDF)
     sidepanel.js       # controlador: estado, persistencia, render

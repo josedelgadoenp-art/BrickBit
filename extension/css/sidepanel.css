@@ -249,6 +249,26 @@ textarea { resize: vertical; }
   cursor: pointer;
 }
 
+.hadassah-modo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #6d28d9;
+  font-weight: 600;
+}
+.hadassah-modo select {
+  flex: 1;
+  border: 1px solid #c4b5fd;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--azul);
+  background: #fff;
+}
+
 .hadassah-estado {
   margin: 0 0 8px;
   font-size: 12px;
@@ -278,6 +298,21 @@ textarea { resize: vertical; }
   border-radius: 8px;
   padding: 7px 9px;
   color: #3b2a67;
+}
+.hadassah-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  margin-bottom: 3px;
+}
+.hadassah-badge.tipo-objecion { background: #fef3c7; color: #92400e; }
+.hadassah-badge.tipo-calculo { background: #dbeafe; color: #1e40af; }
+.hadassah-qa.es-objecion .r {
+  background: #fffbeb;
+  border: 1px solid #fcd9a3;
+  color: #7a5b13;
 }
 
 .hadassah-manual { display: flex; gap: 6px; }

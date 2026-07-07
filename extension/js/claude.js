@@ -550,12 +550,33 @@ sugiere confirmarlo después de la llamada.
 cuando tenga sentido (por ejemplo: "...y aquí su asesor puede afinarlo a tu caso").`;
 }
 
-async function preguntarHadassah(pregunta, sesion, { apiKey, modelo }) {
+function construirSystemObjecion(sesion) {
+  const prospecto = sesion.nombreProspecto || "el prospecto";
+  return `Eres Hadassah, coach de ventas de GNP. El asesor está EN VIVO con ${prospecto} y \
+te reporta una objeción del cliente. Tu respuesta es SOLO para el asesor (no se dice en voz \
+alta al cliente): dale un guion breve para rebatir con inteligencia y empatía.
+
+CATÁLOGO GNP DE REFERENCIA:
+${catalogoComoTexto()}
+
+REGLAS:
+1. Máximo 90 palabras, en prosa, sin listas ni markdown. Español mexicano.
+2. Usa los NÚMEROS Y DATOS del propio prospecto (los del contexto) para rebatir; el mejor \
+argumento es su propia realidad, no frases genéricas.
+3. Nunca inventes primas ni condiciones. Reencuadra el precio como costo del riesgo, no como gasto.
+4. Da una o dos frases listas para decir ("puedes decirle: ...") y, si aplica, una pregunta \
+de cierre para devolver la conversación al valor.
+5. Tono de estratega tranquilo: la objeción es una señal de compra, no un rechazo.`;
+}
+
+async function preguntarHadassah(pregunta, sesion, { apiKey, modelo, tipo = "normal" }) {
   if (!apiKey) {
     throw new Error(
       "Falta la API key de Anthropic. Configúrala en las opciones de la extensión."
     );
   }
+
+  const esObj = tipo === "objecion";
 
   let contexto = "";
   const notas = Object.values(sesion.notasPregunta || {})
@@ -563,15 +584,14 @@ async function preguntarHadassah(pregunta, sesion, { apiKey, modelo }) {
     .join(" · ");
   if (sesion.nombreProspecto || notas) {
     contexto =
-      "Contexto de la llamada (úsalo solo si ayuda): " +
+      "Contexto de la llamada (úsalo para personalizar): " +
       (sesion.nombreProspecto ? `prospecto ${sesion.nombreProspecto}. ` : "") +
       (notas ? `Notas del asesor: ${notas}` : "");
-    contexto = contexto.slice(0, 900) + "\n\n";
+    contexto = contexto.slice(0, 1200) + "\n\n";
   }
 
-  let mensajes = [
-    { role: "user", content: contexto + "Pregunta dicha en voz alta: " + pregunta },
-  ];
+  const etiqueta = esObj ? "Objeción del cliente: " : "Pregunta dicha en voz alta: ";
+  let mensajes = [{ role: "user", content: contexto + etiqueta + pregunta }];
 
   // La búsqueda web corre en el servidor; si agota su ciclo, el API devuelve
   // pause_turn y hay que reenviar la conversación para que continúe.
@@ -585,10 +605,14 @@ async function preguntarHadassah(pregunta, sesion, { apiKey, modelo }) {
           model: modelo || MODELO_DEFAULT,
           max_tokens: 2000,
           thinking: { type: "adaptive" },
-          output_config: { effort: "low" }, // respuesta de voz: prioriza latencia
-          system: construirSystemHadassah(sesion),
+          output_config: { effort: "low" }, // respuesta rápida: prioriza latencia
+          system: esObj ? construirSystemObjecion(sesion) : construirSystemHadassah(sesion),
           messages: mensajes,
-          tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 2 }],
+          // La búsqueda web solo aplica a dudas informativas; las objeciones se
+          // rebaten con los datos del prospecto, sin red.
+          ...(esObj
+            ? {}
+            : { tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 2 }] }),
         }),
       });
     } catch (err) {

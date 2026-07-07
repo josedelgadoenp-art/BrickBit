@@ -33,6 +33,30 @@ function detectarNombreHadassah(texto) {
   return { resto };
 }
 
+// Objeciones clásicas de venta de seguros (texto ya sin acentos).
+const _OBJECIONES = [
+  /objecion/,
+  /(muy\s+)?car[oa]\b/,
+  /carisim/,
+  /esta\s+car/,
+  /lo\s+(voy|va|van|vamos)\s+a\s+pensar/,
+  /pensarl[oa]/,
+  /dejame\s+pensarl/,
+  /ya\s+teng?o?\s+(un|uno|seguro|el)/,
+  /ya\s+tiene\s+(un|uno|seguro|el)/,
+  /del\s+trabajo/,
+  /no\s+(me\s+)?convence/,
+  /no\s+(me\s+)?interesa/,
+  /no\s+cre[eo]\s+en\s+(los\s+)?seguros/,
+  /no\s+confi/,
+  /no\s+lo\s+necesit/,
+];
+
+function esObjecion(texto) {
+  const s = _sinAcentos(String(texto)).toLowerCase();
+  return _OBJECIONES.some((r) => r.test(s));
+}
+
 function _elegirVozEspanol() {
   const voces = speechSynthesis.getVoices();
   const es = voces.filter((v) => v.lang && v.lang.toLowerCase().startsWith("es"));
@@ -52,7 +76,8 @@ class HadassahVoz {
     this.onIntercambio = onIntercambio; // (pregunta, respuesta) => void
     this.onError = onError;
     this.activa = true;
-    this.estado = "esperando"; // esperando | recolectando | pensando | hablando
+    this.modo = "voz"; // "voz" (en voz alta) | "privada" (solo texto para el asesor)
+    this.estado = "esperando"; // esperando | recolectando | pensando | hablando | privado
     this._pregunta = "";
     this._timer = null;
     this._ttsSafety = null;
@@ -116,17 +141,40 @@ class HadassahVoz {
   async preguntar(pregunta) {
     if (this.ocupada) return;
     clearTimeout(this._timer);
+
+    // 1) ¿Es un cálculo? Se resuelve local: instantáneo y siempre exacto.
+    const calc =
+      typeof interpretarCalculo === "function" ? interpretarCalculo(pregunta) : null;
+    if (calc) {
+      this.onIntercambio(pregunta, calc.texto, "calculo");
+      if (this.modo === "privada") this._mostrarPrivado();
+      else this._hablar(calc.texto);
+      return;
+    }
+
+    // 2) ¿Es una objeción? La respuesta es coaching y SIEMPRE va en privado,
+    //    para que el cliente no escuche el guion de rebate.
+    const objecion = esObjecion(pregunta);
+    const privado = objecion || this.modo === "privada";
+    const tipo = objecion ? "objecion" : "normal";
+
     this._setEstado("pensando");
     let respuesta;
     try {
-      respuesta = await this.consultar(pregunta);
+      respuesta = await this.consultar(pregunta, tipo);
     } catch (err) {
       this.onError("Hadassah no pudo responder: " + err.message);
       this._setEstado("esperando");
       return;
     }
-    this.onIntercambio(pregunta, respuesta);
-    this._hablar(respuesta);
+    this.onIntercambio(pregunta, respuesta, tipo);
+    if (privado) this._mostrarPrivado();
+    else this._hablar(respuesta);
+  }
+
+  _mostrarPrivado() {
+    this._finHablaTs = 0;
+    this._setEstado("privado");
   }
 
   _hablar(texto) {
