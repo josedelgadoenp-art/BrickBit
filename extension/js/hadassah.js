@@ -54,16 +54,43 @@ function esObjecion(texto) {
   return _OBJECIONES.some((r) => r.test(s));
 }
 
+// Nombres de voces femeninas en español conocidas por plataforma (Windows,
+// macOS, Google/Chrome). Se usan para elegir automáticamente una voz de mujer.
+const _VOCES_FEMENINAS = [
+  "sabina", "dalia", "ximena", "paloma", "helena", "laura", "nuria", "marisol",
+  "paulina", "monica", "mónica", "angelica", "angélica", "esperanza", "yolanda",
+  "google español", "female", "mujer",
+];
+const _VOCES_MASCULINAS = [
+  "jorge", "juan", "diego", "pablo", "carlos", "raul", "raúl", "alvaro", "álvaro",
+  "male", "hombre",
+];
+
+// Elige la mejor voz femenina en español disponible en el navegador.
 function _elegirVozEspanol() {
   const voces = speechSynthesis.getVoices();
   const es = voces.filter((v) => v.lang && v.lang.toLowerCase().startsWith("es"));
   if (!es.length) return null;
-  const pref = ["es-mx", "es-us", "es-419", "es-es"];
-  for (const lang of pref) {
-    const v = es.find((x) => x.lang.toLowerCase().startsWith(lang));
-    if (v) return v;
-  }
-  return es[0];
+
+  const pesoIdioma = (lang) => {
+    const l = lang.toLowerCase();
+    if (l.startsWith("es-mx")) return 40;
+    if (l.startsWith("es-us") || l.startsWith("es-419")) return 30;
+    if (l.startsWith("es-es")) return 20;
+    return 10;
+  };
+
+  const puntuar = (v) => {
+    const nombre = v.name.toLowerCase();
+    let p = pesoIdioma(v.lang);
+    if (_VOCES_FEMENINAS.some((n) => nombre.includes(n))) p += 100;
+    if (_VOCES_MASCULINAS.some((n) => nombre.includes(n))) p -= 100;
+    // Las voces "natural"/"online"/"premium" suenan más humanas y suaves.
+    if (/natural|online|premium|enhanced|neural/.test(nombre)) p += 25;
+    return p;
+  };
+
+  return es.slice().sort((a, b) => puntuar(b) - puntuar(a))[0];
 }
 
 class HadassahVoz {
@@ -195,7 +222,9 @@ class HadassahVoz {
       const u = new SpeechSynthesisUtterance(trozo.trim());
       u.lang = voz?.lang || "es-MX";
       if (voz) u.voice = voz;
-      u.rate = 1.04;
+      // Tono suave y femenino: ritmo tranquilo y pitch ligeramente alto.
+      u.rate = 0.96;
+      u.pitch = 1.15;
       u.onend = u.onerror = () => {
         pendientes--;
         if (pendientes <= 0) terminar();
