@@ -1,2 +1,6 @@
-streamlit
+streamlit>=1.39
 pandas
+numpy
+plotly
+Pillow
+anthropic

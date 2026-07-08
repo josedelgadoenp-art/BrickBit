@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Descubre tu Número de Destino · BrickBit</title>
+<meta property="og:title" content="Tu vida tiene un número. ¿Ya conoces el tuyo?">
+<meta property="og:description" content="En 45 segundos descubre cuánto vale tu vida, qué tan protegida está y qué arquetipo financiero eres. Compáralo con tu generación.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1A2230; --ink-soft:#46505F; --paper:#FCFBF8; --card:#FFFFFF;
+    --naranja:#F2711C; --naranja-d:#C8541F; --naranja-soft:#FFF1E6;
+    --azul:#1F6F8B; --verde:#2E7D5B; --amber:#E0892B; --muted:#717A86;
+    --line:#EAE5DB; --line-2:#F1ECE3;
+    --shadow:0 1px 2px rgba(26,34,48,.04),0 10px 30px rgba(26,34,48,.07);
+    --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .shell{max-width:640px;margin:0 auto;padding:0 18px 60px}
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 0 8px}
+  .wordmark{font-family:var(--serif);font-weight:600;font-size:22px;letter-spacing:-.01em}
+  .wordmark small{display:block;font-family:var(--sans);font-weight:600;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .badge-gnp{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--naranja-d);background:var(--naranja-soft);padding:6px 11px;border-radius:20px;white-space:nowrap}
+
+  .prog{display:flex;gap:6px;margin:14px 0 6px}
+  .prog .seg{height:5px;flex:1;border-radius:3px;background:var(--line);transition:.3s}
+  .prog .seg.on{background:var(--naranja)}
+  .prog.hide{display:none}
+
+  .step{animation:fade .35s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .hero{padding:16px 2px 6px;animation:fade .4s ease}
+  .hero .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--naranja);margin:0 0 10px}
+  .hero h1{font-family:var(--serif);font-weight:500;font-size:clamp(30px,7.6vw,44px);line-height:1.06;letter-spacing:-.015em;margin:0 0 14px}
+  .hero p{font-size:16.5px;color:var(--ink-soft);margin:0 0 12px;max-width:31em}
+  .hero .firma{font-size:14px;color:var(--muted);margin:0 0 24px}
+  .hero .firma b{color:var(--ink-soft)}
+  .refbanner{background:var(--naranja-soft);border:1px solid #F3D7C7;border-radius:13px;padding:12px 15px;margin:0 0 18px;font-size:14px;color:var(--naranja-d);font-weight:600}
+
+  .qhead{margin:6px 0 18px}
+  .qhead .count{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:8px}
+  .qhead h2{font-family:var(--serif);font-weight:500;font-size:clamp(22px,5vw,30px);line-height:1.18;letter-spacing:-.01em;margin:0}
+  .qhead .sub{font-size:14.5px;color:var(--muted);margin-top:9px}
+
+  .chipgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  @media(max-width:400px){.chipgrid{grid-template-columns:1fr}}
+  .qchip{display:flex;align-items:center;gap:12px;cursor:pointer;background:var(--card);border:1.5px solid var(--line);
+    border-radius:14px;padding:15px 16px;font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink);transition:.15s;box-shadow:var(--shadow);text-align:left}
+  .qchip:hover{border-color:var(--naranja);transform:translateY(-1px)}
+  .qchip.on{border-color:var(--naranja);background:var(--naranja-soft)}
+  .qchip .emoji{font-size:22px;flex:0 0 auto}
+  .qchip small{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+  .fullw{grid-column:1/-1}
+
+  .sliderbox{background:var(--card);border:1.5px solid var(--line);border-radius:15px;padding:22px 20px;box-shadow:var(--shadow)}
+  .sliderbox .bigval{font-family:var(--serif);font-weight:600;font-size:44px;text-align:center;color:var(--naranja-d);line-height:1;margin-bottom:4px}
+  .sliderbox .biglab{text-align:center;font-size:13px;color:var(--muted);margin-bottom:18px}
+  input[type=range]{width:100%;accent-color:var(--naranja);height:34px}
+
+  .backrow{margin-top:20px}
+  .back{background:none;border:none;cursor:pointer;color:var(--muted);font-family:var(--sans);font-size:14px;font-weight:600;padding:8px 4px;display:inline-flex;align-items:center;gap:7px}
+  .back:hover{color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:none;cursor:pointer;font-family:var(--sans);font-weight:600;font-size:16px;padding:15px 26px;border-radius:13px;transition:.16s;text-decoration:none;width:100%}
+  .btn-primary{background:var(--naranja);color:#fff;box-shadow:0 5px 16px rgba(242,113,28,.32)}
+  .btn-primary:hover{background:var(--naranja-d);transform:translateY(-1px)}
+  .btn-wa{background:#1FA855;color:#fff;box-shadow:0 5px 16px rgba(31,168,85,.3)}
+  .btn-wa:hover{background:#178a45}
+  .btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+  .btn-ghost:hover{background:var(--line-2)}
+  .btn-dark{background:var(--ink);color:#fff}
+  .btn-dark:hover{background:#0e1420}
+  .btnrow{margin-top:20px;display:flex;flex-direction:column;gap:11px}
+
+  /* ---- resultado ---- */
+  .reveal{background:var(--ink);color:#fff;border-radius:20px;padding:30px 24px;text-align:center;margin-bottom:16px;overflow:hidden;position:relative}
+  .reveal .lab{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#FFB489;margin-bottom:10px}
+  .reveal .num{font-family:var(--serif);font-weight:600;font-size:clamp(40px,11vw,62px);line-height:1;letter-spacing:-.02em}
+  .reveal .sub{font-size:14px;color:#C8D0DA;margin-top:10px;line-height:1.5}
+  .protbar{margin:18px auto 4px;max-width:420px}
+  .protbar .track{height:12px;border-radius:8px;background:rgba(255,255,255,.14);overflow:hidden}
+  .protbar .fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#F2711C,#FFB489);width:0;transition:width 1.2s ease .4s}
+  .protbar .cap{display:flex;justify-content:space-between;font-size:12px;color:#C8D0DA;margin-top:7px}
+  .protbar .cap b{color:#FFB489;font-size:14px}
+
+  .arq-card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:22px;margin-bottom:16px}
+  .arq-card .tag{font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--azul);background:#EAF3F6;padding:5px 11px;border-radius:20px;display:inline-block;margin-bottom:12px}
+  .arq-card .emoji{font-size:44px;line-height:1}
+  .arq-card h2{font-family:var(--serif);font-weight:600;font-size:27px;letter-spacing:-.01em;margin:8px 0 6px}
+  .arq-card p{font-size:15px;color:var(--ink-soft);margin:0 0 14px}
+  .jugada{background:var(--naranja-soft);border-radius:12px;padding:13px 15px}
+  .jugada .t{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--naranja-d);margin-bottom:5px}
+  .jugada p{font-size:14px;color:var(--ink-soft);margin:0}
+
+  .pct-card{background:var(--card);border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+  .pct-card h3{font-family:var(--serif);font-weight:500;font-size:19px;margin:0 0 4px}
+  .pct-card .s{font-size:13px;color:var(--muted);margin:0 0 16px}
+  .pctbar{position:relative;height:14px;border-radius:8px;background:linear-gradient(90deg,#F6D2BE,#EAF3F6,#CFE6DA);margin:26px 6px 10px}
+  .pctbar .you{position:absolute;top:-9px;width:4px;height:32px;border-radius:2px;background:var(--naranja-d);transform:translateX(-50%)}
+  .pctbar .youlab{position:absolute;top:-34px;transform:translateX(-50%);font-size:11.5px;font-weight:700;color:var(--naranja-d);white-space:nowrap}
+  .pct-card .verdict{font-size:14.5px;color:var(--ink-soft);margin-top:10px}
+  .pct-card .verdict b{color:var(--naranja-d)}
+
+  .news{margin:22px 0 16px}
+  .news h3{font-family:var(--serif);font-weight:500;font-size:20px;margin:0 0 4px}
+  .news .s{font-size:13px;color:var(--muted);margin:0 0 14px}
+  .paper2{border:1.5px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:12px;background:#FFFDF7}
+  .paper2 .masthead{display:flex;justify-content:space-between;align-items:baseline;padding:10px 16px;border-bottom:2px solid var(--ink);font-family:var(--serif)}
+  .paper2 .masthead .name{font-weight:600;font-size:15px;letter-spacing:.02em}
+  .paper2 .masthead .date{font-size:11px;color:var(--muted);font-family:var(--sans)}
+  .paper2 .body{padding:14px 16px 16px}
+  .paper2 .kicker{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+  .paper2 .head{font-family:var(--serif);font-weight:600;font-size:20px;line-height:1.22;margin:0 0 8px}
+  .paper2 .lede{font-size:13.5px;color:var(--ink-soft);margin:0}
+  .paper2.good .kicker{color:var(--verde)}
+  .paper2.bad{background:#FBF6F1}
+  .paper2.bad .kicker{color:var(--naranja-d)}
+
+  .share-sec{background:var(--card);border:1.5px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:20px;margin:20px 0 16px}
+  .share-sec h3{font-family:var(--serif);font-weight:500;font-size:20px;margin:0 0 4px}
+  .share-sec .s{font-size:13.5px;color:var(--muted);margin:0 0 14px}
+  .cardprev{width:100%;border-radius:14px;border:1.5px solid var(--line);display:block;margin-bottom:14px}
+  .reflink{display:flex;gap:8px;margin-top:12px}
+  .reflink input{flex:1;font-family:var(--sans);font-size:13px;color:var(--ink-soft);border:1.5px solid var(--line);border-radius:11px;padding:11px 12px;background:var(--paper)}
+  .reflink button{flex:0 0 auto;border:none;cursor:pointer;background:var(--ink);color:#fff;font-family:var(--sans);font-weight:600;font-size:13px;padding:0 16px;border-radius:11px}
+  .refnote{font-size:12.5px;color:var(--muted);margin-top:8px}
+
+  .next-sec{margin-top:22px}
+  .cta-note{font-size:12.5px;color:var(--muted);text-align:center;margin-top:10px}
+  .restart{margin-top:20px;text-align:center}
+  footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="wordmark">BrickBit<small>Finance &amp; Strategy</small></div>
+    <div class="badge-gnp">Agente GNP</div>
+  </header>
+  <div class="prog hide" id="prog"></div>
+  <main id="app"></main>
+  <footer id="foot"></footer>
+</div>
+<canvas id="shareCanvas" width="1080" height="1350" hidden></canvas>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN — misma filosofía que /financial
+============================================================ */
+const CONFIG = {
+  selfUrl:      "https://brickbit.co/destino",   // URL pública de ESTA página (para compartir)
+  financialUrl: "/financial",                    // tu buscador de seguro ideal
+  leadEndpoint: "/api/lead",                     // función Netlify (déjalo "" para desactivar)
+  gaId:         "",
+  privacyUrl:   ""
+};
+const AGENTE = {
+  nombre:"José Delgado", rol:"Asesor Profesional en Seguros",
+  whatsapp:"5215584681927"
+};
+
+/* ---- utilidades ---- */
+const pesos=new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
+const fmtPeso=v=>pesos.format(Math.round(v||0));
+const fmtCorto=v=>{
+  if(v>=1e6) return "$"+(v/1e6).toLocaleString('es-MX',{maximumFractionDigits:1})+" millones";
+  return fmtPeso(v);
+};
+const fmtCard=v=>{
+  if(v>=1e6) return "$"+(v/1e6).toLocaleString('es-MX',{maximumFractionDigits:1})+"M";
+  return "$"+Math.round(v/1000)+"k";
+};
+const store={
+  get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+};
+window.dataLayer=window.dataLayer||[];
+function track(ev,data){try{
+  window.dataLayer.push({event:ev,...(data||{})});
+  if(typeof window.gtag==='function') window.gtag('event',ev,data||{});
+}catch(e){}}
+(function loadGA(){ if(!CONFIG.gaId) return; try{
+  const s=document.createElement('script');s.async=true;
+  s.src="https://www.googletagmanager.com/gtag/js?id="+CONFIG.gaId;document.head.appendChild(s);
+  window.gtag=function(){window.dataLayer.push(arguments);};
+  window.gtag('js',new Date());window.gtag('config',CONFIG.gaId);
+}catch(e){} })();
+
+/* ---- referidos: código propio + detección de invitación ---- */
+function myRefCode(){
+  let c=store.get('bb_ref_code');
+  if(!c){ c=Math.random().toString(36).slice(2,8).toUpperCase(); store.set('bb_ref_code',c); }
+  return c;
+}
+/* ---- registro de eventos en tu hoja (vía función Netlify) ---- */
+function sendLead(payload){
+  if(!CONFIG.leadEndpoint) return;
+  try{
+    fetch(CONFIG.leadEndpoint,{
+      method:"POST", keepalive:true,
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    }).catch(()=>{});
+  }catch(e){}
+}
+
+const refFrom=new URLSearchParams(location.search).get('ref')||"";
+if(refFrom){
+  track('llegada_por_referido',{ref:refFrom});
+  sendLead({tipo:"evento",evento:"llegada_referido",ref:refFrom,origen:"destino"});
+}
+
+/* ============================================================
+   MODELO
+   Estimaciones ilustrativas. La penetración del seguro en México
+   es baja (menos de 3 de cada 10 adultos tienen seguro de vida
+   individual), lo que hace del percentil un gancho honesto.
+============================================================ */
+const INGRESOS=[
+  {l:"Menos de $15,000",v:12000},{l:"$15,000 – $30,000",v:22000},
+  {l:"$30,000 – $60,000",v:45000},{l:"$60,000 – $100,000",v:80000},
+  {l:"Más de $100,000",v:130000}
+];
+const DEPS=[{l:"Nadie aún",v:0,e:"🧍"},{l:"1 persona",v:1,e:"👤"},{l:"2 personas",v:2,e:"👥"},{l:"3 o más",v:3,e:"👨‍👩‍👧‍👦"}];
+const PROTS=[
+  {k:"vida",l:"Seguro de vida",e:"🛡️",w:35},
+  {k:"gmm",l:"Gastos médicos",e:"🏥",w:30},
+  {k:"retiro",l:"Ahorro / plan de retiro",e:"🌅",w:25},
+  {k:"auto",l:"Seguro de auto",e:"🚗",w:10}
+];
+const ESTILOS=[
+  {k:"construir",l:"Estoy construyendo mi patrimonio",e:"🧱"},
+  {k:"proteger",l:"Lo mío es proteger a los míos",e:"🦁"},
+  {k:"sonar",l:"Tengo sueños grandes por cumplir",e:"🎈"},
+  {k:"optimizar",l:"Optimizo cada peso que gano",e:"♟️"}
+];
+const ARQUETIPOS={
+  construir:{
+    lo:{e:"🧱",n:"Constructor Desprotegido",d:"Levantas patrimonio con las manos desnudas: trabajas duro, acumulas… pero un solo golpe (una enfermedad, un accidente) puede tirar años de esfuerzo en semanas.",
+        j:"Blinda primero la máquina que construye: tú. Un seguro de gastos médicos y protección de vida cuestan una fracción de lo que ya construiste."},
+    hi:{e:"🏗️",n:"Constructor Blindado",d:"Construyes y además pusiste andamios: tu patrimonio crece sobre una base que no se derrumba con el primer imprevisto. Eso te pone en una minoría selecta.",
+        j:"Tu siguiente nivel: que el dinero trabaje solo. Un plan de retiro con beneficio fiscal convierte tu disciplina en libertad con fecha."}},
+  proteger:{
+    lo:{e:"🛡️",n:"Guardián a Medias",d:"Darías todo por los tuyos — pero hoy tu escudo tiene huecos. Si tú faltaras mañana, el amor no paga la renta: la protección sí.",
+        j:"Un seguro de vida bien calculado es la carta de amor más seria que existe. Definir tu suma asegurada toma una llamada."},
+    hi:{e:"🦁",n:"Guardián Total",d:"No solo amas a los tuyos: los respaldaste con hechos. Tu familia tiene red aunque tú faltes, y eso muy pocos pueden decirlo.",
+        j:"Revisa tu suma asegurada cada año: la vida (y la inflación) cambian más rápido que las pólizas."}},
+  sonar:{
+    lo:{e:"🪂",n:"Soñador sin Red",d:"Tus metas son grandes y reales — pero hoy dependen de que nada salga mal. Los sueños sin protección son apuestas; con protección, son planes.",
+        j:"Ponle fecha y blindaje a tu sueño #1: un plan de ahorro con protección hace que se cumpla aunque el camino se tuerza."},
+    hi:{e:"🎈",n:"Soñador con Paracaídas",d:"Sueñas en grande y saltas con paracaídas: tus metas tienen estructura y tu protección sostiene el plan. Combinación rara y poderosa.",
+        j:"Indexa tus metas a la inflación real (la educativa sube ~8% al año) para que el sueño no se encoja en el camino."}},
+  optimizar:{
+    lo:{e:"😴",n:"Estratega Dormido",d:"Sabes de dinero y exprimes cada peso… pero dejaste abierta la puerta grande: un imprevisto puede costarte más que años de optimización.",
+        j:"Trata la protección como lo que es: la posición defensiva de tu portafolio. Deducible de impuestos incluido en planes de retiro."},
+    hi:{e:"♟️",n:"Gran Estratega",d:"Juegas en modo avanzado: rendimiento, protección y estructura. Tu dinero tiene plan de ataque y defensa. Nivel top de tu generación.",
+        j:"Optimiza la capa fiscal: aportaciones deducibles (Art. 151 LISR) y coberturas que congelan costos a tu edad actual."}}
+};
+
+/* percentil estimado vs. tu generación (ilustrativo, base: baja penetración del seguro en MX) */
+function percentil(score, edad){
+  const base = edad<30 ? 22 : edad<45 ? 18 : 14;   // los jóvenes casi no se aseguran
+  return Math.max(4, Math.min(97, Math.round(base + score*0.78)));
+}
+function valorVida(ingreso, edad){
+  const anios=Math.max(65-edad,1);
+  let total=0, ing=ingreso*12;
+  for(let t=0;t<anios;t++){ total+=ing; ing*=1.04; }
+  return total;
+}
+function scoreProteccion(prot, deps){
+  let s=PROTS.reduce((a,p)=>a+(prot.includes(p.k)?p.w:0),0);
+  if(deps>0 && !prot.includes('vida')) s=Math.max(0,s-10); // con dependientes, no tener vida pesa más
+  return Math.min(s,100);
+}
+
+/* ============================================================
+   ESTADO Y FLUJO
+============================================================ */
+let ans={edad:32,ingreso:null,deps:null,prot:[],estilo:null};
+let phase="hero";
+const app=document.getElementById('app');
+const prog=document.getElementById('prog');
+const STEPS=["edad","ingreso","deps","prot","estilo"];
+
+function setProg(stepIdx){
+  if(stepIdx===null){prog.classList.add('hide');return;}
+  prog.classList.remove('hide');
+  prog.innerHTML=STEPS.map((_,i)=>`<span class="seg ${i<=stepIdx?'on':''}"></span>`).join('');
+}
+
+function renderHero(){
+  phase="hero"; setProg(null);
+  app.innerHTML=`
+    <section class="hero">
+      <p class="eyebrow">45 segundos · sin registro</p>
+      <h1>Tu vida tiene<br>un número.</h1>
+      <p>Cuánto vale todo lo que vas a generar, qué tan protegido está hoy, y qué <b>arquetipo financiero</b> eres comparado con tu generación. Descúbrelo y compártelo.</p>
+      <p class="firma">Una herramienta de <b>${AGENTE.nombre}</b> · ${AGENTE.rol}</p>
+      ${refFrom?`<div class="refbanner">🎁 Llegaste por invitación de un amigo (código ${refFrom}). Descubre tu número y reta al siguiente.</div>`:""}
+      <button class="btn btn-primary" id="startBtn">Descubrir mi número <span aria-hidden="true">→</span></button>
+    </section>`;
+  document.getElementById('startBtn').addEventListener('click',()=>{track('destino_inicio',{ref:refFrom});renderEdad();});
+}
+
+function renderEdad(){
+  phase="edad"; setProg(0);
+  app.innerHTML=`
+    <section class="step">
+      <div class="qhead"><div class="count">1 de 5</div><h2>¿Cuántos años tienes?</h2></div>
+      <div class="sliderbox">
+        <div class="bigval" id="edadVal">${ans.edad}</div>
+        <div class="biglab">años</div>
+        <input type="range" min="18" max="70" value="${ans.edad}" id="edadRng" aria-label="Edad">
+      </div>
+      <div class="btnrow"><button class="btn btn-primary" id="next">Continuar →</button></div>
+      <div class="backrow"><button class="back" id="backBtn">← Volver al inicio</button></div>
+    </section>`;
+  const rng=document.getElementById('edadRng');
+  rng.addEventListener('input',()=>{ans.edad=+rng.value;document.getElementById('edadVal').textContent=rng.value;});
+  document.getElementById('next').addEventListener('click',renderIngreso);
+  document.getElementById('backBtn').addEventListener('click',renderHero);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderIngreso(){
+  phase="ingreso"; setProg(1);
+  app.innerHTML=`
+    <section class="step">
+      <div class="qhead"><div class="count">2 de 5</div><h2>¿Cuánto ganas al mes, aproximadamente?</h2>
+      <div class="sub">Solo para calcular tu número. No se guarda en ningún servidor.</div></div>
+      <div class="chipgrid">
+        ${INGRESOS.map((o,i)=>`<button class="qchip fullw" data-i="${i}"><span class="emoji">💵</span><span>${o.l}</span></button>`).join('')}
+      </div>
+      <div class="backrow"><button class="back" id="backBtn">← Anterior</button></div>
+    </section>`;
+  app.querySelectorAll('.qchip').forEach(b=>b.addEventListener('click',()=>{
+    ans.ingreso=INGRESOS[+b.dataset.i].v; renderDeps();
+  }));
+  document.getElementById('backBtn').addEventListener('click',renderEdad);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderDeps(){
+  phase="deps"; setProg(2);
+  app.innerHTML=`
+    <section class="step">
+      <div class="qhead"><div class="count">3 de 5</div><h2>¿Cuántas personas dependen de ti?</h2></div>
+      <div class="chipgrid">
+        ${DEPS.map((o,i)=>`<button class="qchip" data-i="${i}"><span class="emoji">${o.e}</span><span>${o.l}</span></button>`).join('')}
+      </div>
+      <div class="backrow"><button class="back" id="backBtn">← Anterior</button></div>
+    </section>`;
+  app.querySelectorAll('.qchip').forEach(b=>b.addEventListener('click',()=>{
+    ans.deps=DEPS[+b.dataset.i].v; renderProt();
+  }));
+  document.getElementById('backBtn').addEventListener('click',renderIngreso);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderProt(){
+  phase="prot"; setProg(3);
+  app.innerHTML=`
+    <section class="step">
+      <div class="qhead"><div class="count">4 de 5</div><h2>¿Qué protección tienes hoy?</h2>
+      <div class="sub">Marca todas las que apliquen. Si ninguna, continúa directo.</div></div>
+      <div class="chipgrid">
+        ${PROTS.map((o,i)=>`<button class="qchip ${ans.prot.includes(o.k)?'on':''}" data-k="${o.k}"><span class="emoji">${o.e}</span><span>${o.l}</span></button>`).join('')}
+      </div>
+      <div class="btnrow"><button class="btn btn-primary" id="next">Continuar →</button></div>
+      <div class="backrow"><button class="back" id="backBtn">← Anterior</button></div>
+    </section>`;
+  app.querySelectorAll('.qchip').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.dataset.k;
+    if(ans.prot.includes(k)) ans.prot=ans.prot.filter(x=>x!==k); else ans.prot.push(k);
+    b.classList.toggle('on');
+  }));
+  document.getElementById('next').addEventListener('click',renderEstilo);
+  document.getElementById('backBtn').addEventListener('click',renderDeps);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderEstilo(){
+  phase="estilo"; setProg(4);
+  app.innerHTML=`
+    <section class="step">
+      <div class="qhead"><div class="count">5 de 5</div><h2>¿Qué frase te describe mejor?</h2></div>
+      <div class="chipgrid">
+        ${ESTILOS.map(o=>`<button class="qchip fullw" data-k="${o.k}"><span class="emoji">${o.e}</span><span>${o.l}</span></button>`).join('')}
+      </div>
+      <div class="backrow"><button class="back" id="backBtn">← Anterior</button></div>
+    </section>`;
+  app.querySelectorAll('.qchip').forEach(b=>b.addEventListener('click',()=>{
+    ans.estilo=b.dataset.k; renderResult();
+  }));
+  document.getElementById('backBtn').addEventListener('click',renderProt);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ============================================================
+   RESULTADO
+============================================================ */
+let R=null; // resultado calculado
+
+function calc(){
+  const vv=valorVida(ans.ingreso, ans.edad);
+  const score=scoreProteccion(ans.prot, ans.deps);
+  const pct=percentil(score, ans.edad);
+  const arq=ARQUETIPOS[ans.estilo][score>=45?'hi':'lo'];
+  return {vv,score,pct,arq};
+}
+
+function renderResult(){
+  phase="result"; setProg(null);
+  R=calc();
+  track('destino_resultado',{score:R.score,pct:R.pct,arquetipo:R.arq.n,ref:refFrom});
+  sendLead({tipo:"evento",evento:"resultado",score:R.score,arquetipo:R.arq.n,percentil:R.pct,ref:refFrom,origen:"destino",
+            extra:`edad ${ans.edad} · deps ${ans.deps} · valor ${fmtCard(R.vv)}`});
+  const anio70=new Date().getFullYear()+(70-ans.edad);
+  const gastoMed=fmtCorto(650000);
+  const refCode=myRefCode();
+  const shareUrl=`${CONFIG.selfUrl}?ref=${refCode}`;
+  const shareTxt=`Mi vida vale ${fmtCorto(R.vv)} y está protegida al ${R.score}%. Soy “${R.arq.n}” ${R.arq.e}. ¿Cuál es tu número? 👉 ${shareUrl}`;
+  const wa=`https://wa.me/?text=${encodeURIComponent(shareTxt)}`;
+  const waAgente=`https://wa.me/${AGENTE.whatsapp}?text=${encodeURIComponent(`Hola ${AGENTE.nombre}, descubrí mi Número de Destino: mi vida vale ${fmtCorto(R.vv)} y está protegida al ${R.score}% (soy “${R.arq.n}”). Quiero cerrar esa brecha, ¿me orientas?`)}`;
+
+  app.innerHTML=`
+    <section class="step">
+      <div class="reveal">
+        <div class="lab">Tu Número de Destino</div>
+        <div class="num" id="bignum">$0</div>
+        <div class="sub">Es lo que tu vida va a generar de aquí a los 65 años.<br>Y hoy está protegida al…</div>
+        <div class="protbar">
+          <div class="track"><div class="fill" id="protfill"></div></div>
+          <div class="cap"><span>0%</span><b id="protpct">${R.score}%</b><span>100%</span></div>
+        </div>
+      </div>
+
+      <div class="arq-card">
+        <span class="tag">Tu arquetipo financiero</span>
+        <div class="emoji">${R.arq.e}</div>
+        <h2>${R.arq.n}</h2>
+        <p>${R.arq.d}</p>
+        <div class="jugada"><div class="t">Tu jugada maestra</div><p>${R.arq.j}</p></div>
+      </div>
+
+      <div class="pct-card">
+        <h3>Tú contra tu generación</h3>
+        <p class="s">Estimación con base en la baja penetración del seguro en México.</p>
+        <div class="pctbar">
+          <div class="you" style="left:${R.pct}%"></div>
+          <div class="youlab" style="left:${R.pct}%">TÚ</div>
+        </div>
+        <div class="verdict">${
+          R.pct>=60
+          ? `Estás <b>más protegido que el ${R.pct}%</b> de las personas de tu edad. Vas ganando — la jugada es no soltar la ventaja.`
+          : `Estás más protegido que el ${R.pct}% de tu generación… es decir, <b>el ${100-R.pct}% te lleva ventaja</b>. La buena noticia: cerrar esa brecha toma menos de lo que crees.`
+        }</div>
+      </div>
+
+      <div class="news">
+        <h3>El periódico de tu futuro</h3>
+        <p class="s">Dos ediciones del año ${anio70}. Solo una se imprime — tú eliges cuál.</p>
+        <div class="paper2 good">
+          <div class="masthead"><span class="name">EL PORVENIR</span><span class="date">${anio70} · edición blindada</span></div>
+          <div class="body">
+            <div class="kicker">Historias que sí pasaron</div>
+            <p class="head">A los 70, con los sueños intactos: su plan pagó la educación y el retiro llegó puntual</p>
+            <p class="lede">Empezó a los ${ans.edad} con una decisión sencilla: proteger los ${fmtCorto(R.vv)} que su vida iba a generar. Hoy nadie de su familia depende de la suerte.</p>
+          </div>
+        </div>
+        <div class="paper2 bad">
+          <div class="masthead"><span class="name">EL PORVENIR</span><span class="date">${anio70} · edición expuesta</span></div>
+          <div class="body">
+            <div class="kicker">Pudo evitarse</div>
+            <p class="head">Un imprevisto médico de ${gastoMed} se llevó años de ahorro familiar</p>
+            <p class="lede">“Siempre pensé que había tiempo”, cuenta. El ${100-R.score}% de su vida productiva estaba sin blindar cuando llegó el golpe.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="share-sec">
+        <h3>Tu Tarjeta de Destino 🎴</h3>
+        <p class="s">Compártela y reta a tu gente: ¿cuál es SU número?</p>
+        <img class="cardprev" id="cardPrev" alt="Tu tarjeta de destino">
+        <div class="btnrow" style="margin-top:0">
+          <button class="btn btn-dark" id="shareBtn">📤 Compartir mi tarjeta</button>
+          <a class="btn btn-ghost" id="waShare" href="${wa}" target="_blank" rel="noopener">Retar por WhatsApp</a>
+        </div>
+        <div class="reflink">
+          <input id="refInput" readonly value="${shareUrl}">
+          <button id="copyBtn">Copiar</button>
+        </div>
+        <p class="refnote">🎁 Es tu enlace personal (código ${refCode}). Cuando alguien descubra su número con tu enlace, tu asesor lo sabrá y ambos tendrán prioridad en la asesoría.</p>
+      </div>
+
+      <div class="next-sec btnrow">
+        <a class="btn btn-primary" href="${CONFIG.financialUrl}" id="fullBtn">Cerrar mi brecha: diagnóstico completo (2 min) →</a>
+        <a class="btn btn-wa" href="${waAgente}" target="_blank" rel="noopener" id="waAgente">Hablar con ${AGENTE.nombre} por WhatsApp</a>
+      </div>
+      <p class="cta-note">Te atiende ${AGENTE.nombre}, ${AGENTE.rol}.</p>
+      <div class="restart"><button class="back" id="restartBtn">↺ Calcular de nuevo</button></div>
+    </section>`;
+
+  animateNumber(R.vv);
+  requestAnimationFrame(()=>{const f=document.getElementById('protfill'); if(f) f.style.width=R.score+"%";});
+  drawCard().then(url=>{const img=document.getElementById('cardPrev'); if(img&&url) img.src=url;});
+
+  document.getElementById('shareBtn').addEventListener('click',()=>shareCard(shareTxt,shareUrl));
+  document.getElementById('waShare').addEventListener('click',()=>track('destino_share_wa'));
+  document.getElementById('fullBtn').addEventListener('click',()=>track('destino_a_financial'));
+  document.getElementById('waAgente').addEventListener('click',()=>{
+    track('destino_wa_agente');
+    sendLead({tipo:"evento",evento:"click_whatsapp_agente",score:R.score,arquetipo:R.arq.n,percentil:R.pct,ref:refFrom,origen:"destino"});
+  });
+  document.getElementById('copyBtn').addEventListener('click',()=>{
+    const inp=document.getElementById('refInput');
+    inp.select(); inp.setSelectionRange(0,120);
+    try{ navigator.clipboard.writeText(inp.value); }catch(e){ document.execCommand('copy'); }
+    document.getElementById('copyBtn').textContent="✓ Listo";
+    track('destino_copia_ref');
+    setTimeout(()=>{const b=document.getElementById('copyBtn'); if(b)b.textContent="Copiar";},1800);
+  });
+  document.getElementById('restartBtn').addEventListener('click',()=>{
+    ans={edad:ans.edad,ingreso:null,deps:null,prot:[],estilo:null}; renderHero();
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function animateNumber(target){
+  const el=document.getElementById('bignum'); if(!el)return;
+  const dur=1400, t0=performance.now();
+  function frame(t){
+    const k=Math.min((t-t0)/dur,1);
+    const eased=1-Math.pow(1-k,3);
+    el.textContent=fmtCard(target*eased).replace("$","$ ");
+    if(k<1) requestAnimationFrame(frame);
+    else el.textContent=fmtCard(target).replace("$","$ ");
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ============================================================
+   TARJETA COMPARTIBLE (canvas 1080×1350)
+============================================================ */
+async function drawCard(){
+  try{
+    await (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve());
+    const cv=document.getElementById('shareCanvas'), ctx=cv.getContext('2d');
+    const W=1080,H=1350;
+    // fondo
+    const g=ctx.createLinearGradient(0,0,W,H);
+    g.addColorStop(0,"#141B28"); g.addColorStop(1,"#1A2230");
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    // halo naranja
+    const rg=ctx.createRadialGradient(W*0.85,H*0.1,40,W*0.85,H*0.1,620);
+    rg.addColorStop(0,"rgba(242,113,28,.35)"); rg.addColorStop(1,"rgba(242,113,28,0)");
+    ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
+    // marca
+    ctx.fillStyle="#FFFFFF";
+    ctx.font="600 46px Fraunces, Georgia, serif";
+    ctx.fillText("BrickBit",72,110);
+    ctx.font="700 20px Inter, sans-serif";
+    ctx.fillStyle="#8B95A5";
+    ctx.fillText("F I N A N C E   &   S T R A T E G Y",72,144);
+    // etiqueta
+    ctx.fillStyle="#FFB489";
+    ctx.font="700 30px Inter, sans-serif";
+    ctx.fillText("MI NÚMERO DE DESTINO",72,300);
+    // número
+    ctx.fillStyle="#FFFFFF";
+    ctx.font="600 170px Fraunces, Georgia, serif";
+    ctx.fillText(fmtCard(R.vv),64,470);
+    ctx.fillStyle="#C8D0DA";
+    ctx.font="500 34px Inter, sans-serif";
+    ctx.fillText("es lo que mi vida va a generar…",72,540);
+    // protección
+    ctx.fillStyle="#FFFFFF";
+    ctx.font="600 56px Fraunces, Georgia, serif";
+    ctx.fillText(`…y está protegida al ${R.score}%`,72,640);
+    // barra
+    const bx=72,by=690,bw=W-144,bh=26;
+    ctx.fillStyle="rgba(255,255,255,.15)";
+    roundRect(ctx,bx,by,bw,bh,13); ctx.fill();
+    const bg2=ctx.createLinearGradient(bx,0,bx+bw,0);
+    bg2.addColorStop(0,"#F2711C"); bg2.addColorStop(1,"#FFB489");
+    ctx.fillStyle=bg2;
+    roundRect(ctx,bx,by,Math.max(bw*R.score/100,26),bh,13); ctx.fill();
+    // arquetipo
+    ctx.font="500 110px Inter, sans-serif";
+    ctx.fillText(R.arq.e,72,900);
+    ctx.fillStyle="#FFB489";
+    ctx.font="700 26px Inter, sans-serif";
+    ctx.fillText("MI ARQUETIPO FINANCIERO",230,830);
+    ctx.fillStyle="#FFFFFF";
+    ctx.font="600 62px Fraunces, Georgia, serif";
+    ctx.fillText(R.arq.n,230,900);
+    // percentil
+    ctx.fillStyle="#C8D0DA";
+    ctx.font="500 34px Inter, sans-serif";
+    ctx.fillText(`Más protegido que el ${R.pct}% de mi generación`,72,1000);
+    // separador
+    ctx.strokeStyle="rgba(255,255,255,.2)"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(72,1080); ctx.lineTo(W-72,1080); ctx.stroke();
+    // CTA
+    ctx.fillStyle="#FFFFFF";
+    ctx.font="600 44px Fraunces, Georgia, serif";
+    ctx.fillText("¿Cuál es TU número?",72,1160);
+    ctx.fillStyle="#F2711C";
+    ctx.font="700 38px Inter, sans-serif";
+    ctx.fillText(CONFIG.selfUrl.replace(/^https?:\/\//,""),72,1220);
+    ctx.fillStyle="#8B95A5";
+    ctx.font="500 26px Inter, sans-serif";
+    ctx.fillText(`${AGENTE.nombre} · ${AGENTE.rol} GNP`,72,1290);
+    return cv.toDataURL("image/png");
+  }catch(e){ return null; }
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+async function shareCard(shareTxt, shareUrl){
+  track('destino_share_intento');
+  const cv=document.getElementById('shareCanvas');
+  const blob=await new Promise(res=>cv.toBlob(res,"image/png"));
+  if(blob && navigator.canShare && navigator.canShare({files:[new File([blob],"x.png",{type:"image/png"})]})){
+    try{
+      await navigator.share({
+        files:[new File([blob],"mi-numero-de-destino.png",{type:"image/png"})],
+        text:shareTxt
+      });
+      track('destino_share_ok',{via:"webshare"}); return;
+    }catch(e){ /* usuario canceló o falló: caemos al respaldo */ }
+  }
+  // respaldo: descargar + abrir WhatsApp con el texto
+  try{
+    const a=document.createElement('a');
+    a.href=cv.toDataURL("image/png"); a.download="mi-numero-de-destino.png";
+    document.body.appendChild(a); a.click(); a.remove();
+  }catch(e){}
+  window.open(`https://wa.me/?text=${encodeURIComponent(shareTxt)}`,"_blank","noopener");
+  track('destino_share_ok',{via:"fallback"});
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+document.getElementById('foot').innerHTML=
+  `Herramienta ilustrativa de ${AGENTE.nombre}, Agente Profesional en Seguros GNP. El “Número de Destino”, el percentil y los escenarios son estimaciones educativas, no una cotización ni una proyección garantizada. La cobertura, condiciones y costo definitivos se confirman en una cotización formal de GNP.${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">Aviso de privacidad</a>.`:""}`;
+renderHero();
+</script>
+</body>
+</html>

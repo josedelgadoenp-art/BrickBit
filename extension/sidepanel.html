@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Copiloto GNP</title>
+  <link rel="stylesheet" href="css/sidepanel.css" />
+</head>
+<body>
+  <header class="cabecera">
+    <div class="cabecera-titulo">
+      <span class="logo">GNP</span>
+      <div>
+        <h1>Copiloto de Videollamada</h1>
+        <p id="estado-texto" class="estado detenido">Micrófono apagado</p>
+      </div>
+    </div>
+    <div class="cabecera-acciones">
+      <button id="btn-mic" class="btn btn-mic" title="Iniciar / detener transcripción">🎙️ Escuchar</button>
+      <button id="btn-opciones" class="btn btn-icono" title="Opciones">⚙️</button>
+    </div>
+  </header>
+
+  <div id="aviso-consentimiento" class="aviso">
+    ⚖️ Recuerda informar al cliente que la llamada se transcribe para preparar su
+    análisis personalizado, y obtener su consentimiento antes de iniciar.
+    <button id="btn-cerrar-aviso" class="btn-cerrar">✕</button>
+  </div>
+
+  <div id="zona-error" class="error oculto"></div>
+
+  <main>
+    <section class="tarjeta">
+      <div class="fila-campos">
+        <label>Prospecto
+          <input id="nombre-prospecto" type="text" placeholder="Nombre del cliente" />
+        </label>
+        <label>Asesor
+          <input id="nombre-asesor" type="text" placeholder="Tu nombre" />
+        </label>
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <div class="seccion-encabezado">
+        <h2>Guía de 10 preguntas</h2>
+        <span id="progreso-preguntas" class="pastilla">0/10</span>
+      </div>
+      <ol id="lista-preguntas" class="lista-preguntas"></ol>
+    </section>
+
+    <section class="tarjeta tarjeta-espejo">
+      <h2>🪞 Espejo del Futuro</h2>
+      <p class="espejo-sub">Tu patrimonio y tranquilidad a 20 años: con tu plan GNP vs. sin protección. Se dibuja conforme avanza la llamada.</p>
+      <div id="espejo-chart" class="espejo-chart"></div>
+    </section>
+
+    <section class="tarjeta">
+      <div class="seccion-encabezado">
+        <h2>Transcripción en vivo</h2>
+        <button id="btn-limpiar-transcript" class="btn btn-liga">limpiar</button>
+      </div>
+      <div id="transcript" class="transcript">
+        <p class="transcript-vacio">Activa el micrófono para empezar a transcribir…</p>
+      </div>
+      <p id="interim" class="interim"></p>
+    </section>
+
+    <section class="tarjeta tarjeta-hadassah">
+      <div class="seccion-encabezado">
+        <h2>💜 Iris — asistente de voz</h2>
+        <label class="interruptor">
+          <input id="hadassah-toggle" type="checkbox" checked />
+          <span>activa</span>
+        </label>
+      </div>
+
+      <div class="iris-avatar-wrap">
+        <div id="iris-avatar" class="iris-avatar estado-idle" aria-hidden="true">
+          <div class="avatar-glow"></div>
+          <img class="avatar-foto" src="img/iris-avatar.png" alt="Iris" />
+          <svg class="avatar-ring-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <circle class="avatar-ring" cx="60" cy="60" r="57" fill="none" stroke="#fff" stroke-width="3"/>
+          </svg>
+          <div class="avatar-eq"><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="iris-avatar-lado">
+          <div class="iris-nombre">Iris</div>
+          <div id="iris-avatar-estado" class="iris-avatar-estado">Lista para ayudarte</div>
+        </div>
+      </div>
+
+      <div class="hadassah-modo">
+        <span>Responde:</span>
+        <select id="hadassah-modo" title="En voz alta: el cliente la escucha. Privada: solo texto para ti.">
+          <option value="voz">🔊 En voz alta</option>
+          <option value="privada">🤫 Privada (solo tú)</option>
+        </select>
+      </div>
+      <p id="hadassah-estado" class="hadassah-estado">
+        Di «Iris» seguido de la duda y responderá con voz.
+      </p>
+      <div id="iris-pista" class="iris-pista oculto" title="Pista de Iris (solo para ti)"></div>
+      <div id="hadassah-historial" class="hadassah-historial oculto"></div>
+      <div class="hadassah-manual">
+        <input id="hadassah-input" type="text"
+          placeholder="…o escribe aquí la duda y pulsa Enter" />
+        <button id="hadassah-preguntar" class="btn btn-secundario">Preguntar</button>
+        <button id="hadassah-callar" class="btn btn-secundario" title="Detener la voz">🔇</button>
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Notas generales</h2>
+      <textarea id="notas-generales" rows="3"
+        placeholder="Contexto extra: tono del cliente, señales de compra, acuerdos…"></textarea>
+    </section>
+
+    <section class="tarjeta acciones-finales">
+      <button id="btn-generar" class="btn btn-primario">✨ Generar asesoría con IA</button>
+      <button id="btn-nueva-sesion" class="btn btn-secundario">Nueva sesión</button>
+    </section>
+
+    <section id="resultado" class="tarjeta oculto">
+      <div class="seccion-encabezado">
+        <h2>Asesoría personalizada</h2>
+        <button id="btn-pdf" class="btn btn-primario">⬇️ Descargar PDF</button>
+      </div>
+      <div id="resultado-contenido"></div>
+    </section>
+  </main>
+
+  <script src="vendor/jspdf.umd.min.js"></script>
+  <script src="vendor/qrcode.min.js"></script>
+  <script src="js/questions.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/calculadora.js"></script>
+  <script src="js/espejo.js"></script>
+  <script src="js/hadassah.js"></script>
+  <script src="js/claude.js"></script>
+  <script src="js/pdf.js"></script>
+  <script src="js/sidepanel.js"></script>
+</body>
+</html>
