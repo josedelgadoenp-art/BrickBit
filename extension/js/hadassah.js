@@ -54,6 +54,64 @@ function esObjecion(texto) {
   return _OBJECIONES.some((r) => r.test(s));
 }
 
+// ---------------------------------------------------------------------------
+// Comandos de voz para controlar el copiloto (manos libres)
+// ---------------------------------------------------------------------------
+const _NUM_PALABRA = {
+  uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7,
+  ocho: 8, nueve: 9, diez: 10, primera: 1, segunda: 2, tercera: 3, cuarta: 4,
+  quinta: 5, sexta: 6, septima: 7, octava: 8, novena: 9, decima: 10,
+};
+
+function _numeroDe(t) {
+  const m = t.match(/\b(\d{1,2})\b/);
+  if (m) return parseInt(m[1], 10);
+  for (const [pal, n] of Object.entries(_NUM_PALABRA)) {
+    if (new RegExp("\\b" + pal + "\\b").test(t)) return n;
+  }
+  return null;
+}
+
+// Devuelve {accion, valor} o null. Se evalúa ANTES que cálculo/duda.
+function interpretarComando(texto) {
+  const orig = String(texto);
+  const t = _sinAcentos(orig).toLowerCase();
+
+  if (/\b(callate|calla|guarda silencio|silencio|detente|ya para)\b/.test(t))
+    return { accion: "callar" };
+
+  if (/\b(genera|generar|crea|arma|haz)\b.*\b(asesoria|analisis|reporte|informe|pdf)\b/.test(t))
+    return { accion: "generar" };
+
+  if (/\b(modo privad\w*|en privado|solo para mi|que no (lo|me) escuche)\b/.test(t))
+    return { accion: "modo", valor: "privada" };
+  if (/\b(en voz alta|modo normal|que lo escuche|responde en voz)\b/.test(t))
+    return { accion: "modo", valor: "voz" };
+
+  if (/\bpregunta anterior\b|\b(anterior|previa|regresa)\b.*\bpregunta\b/.test(t))
+    return { accion: "anterior" };
+  if (/\bsiguiente pregunta\b|\b(siguiente|proxima)\b.*\bpregunta\b|\bpasa a la siguiente\b/.test(t))
+    return { accion: "siguiente" };
+
+  // marcar pregunta N como respondida
+  if (
+    /\b(marca\w*|termine|contest\w*|respondi\w*|completa\w*|lista)\b/.test(t) &&
+    /\b(pregunta|numero|la|\d)\b/.test(t)
+  ) {
+    const n = _numeroDe(t);
+    if (n) return { accion: "marcar", valor: n };
+  }
+
+  // tomar nota (se conserva el texto original, con acentos y mayúsculas)
+  const mAnota = t.match(/\b(anota|apunta|toma nota|nota)\b\s*(?:que\s+|:\s*)?/);
+  if (mAnota) {
+    const valor = orig.slice(mAnota.index + mAnota[0].length).trim();
+    if (valor) return { accion: "anota", valor };
+  }
+
+  return null;
+}
+
 // Nombres de voces femeninas en español conocidas por plataforma (Windows,
 // macOS, Google/Chrome). Se usan para elegir automáticamente una voz de mujer.
 const _VOCES_FEMENINAS = [
@@ -94,11 +152,12 @@ function _elegirVozEspanol() {
 }
 
 class HadassahVoz {
-  constructor({ consultar, onEstado, onIntercambio, onError }) {
-    this.consultar = consultar; // async (pregunta) => respuesta (texto)
-    this.onEstado = onEstado; // (estado, detalle) => void
-    this.onIntercambio = onIntercambio; // (pregunta, respuesta) => void
+  constructor({ consultar, onEstado, onIntercambio, onError, onComando }) {
+    this.consultar = consultar; // async (pregunta, tipo) => respuesta (texto)
+    this.onEstado = onEstado; // (estado) => void
+    this.onIntercambio = onIntercambio; // (pregunta, respuesta, tipo) => void
     this.onError = onError;
+    this.onComando = onComando; // (cmd) => void — comandos de voz
     this.activa = true;
     this.modo = "voz"; // "voz" (en voz alta) | "privada" (solo texto para el asesor)
     this.estado = "esperando"; // esperando | recolectando | pensando | hablando | privado
@@ -165,6 +224,14 @@ class HadassahVoz {
   async preguntar(pregunta) {
     if (this.ocupada) return;
     clearTimeout(this._timer);
+
+    // 0) ¿Es un comando de control? (manos libres, no gasta API)
+    const cmd = interpretarComando(pregunta);
+    if (cmd && this.onComando) {
+      this.onComando(cmd);
+      this._setEstado("esperando");
+      return;
+    }
 
     // 1) ¿Es un cálculo? Se resuelve local: instantáneo y siempre exacto.
     const calc =

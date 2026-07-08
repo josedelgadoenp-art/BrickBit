@@ -245,6 +245,52 @@ function alSegmentoFinal(texto, preguntaId) {
   guardarSesion();
   renderTranscript();
   hadassah?.procesarSegmento(texto);
+  analizarProactiva(texto);
+}
+
+// ---------------------------------------------------------------------------
+// Iris proactiva: pistas discretas ante objeciones y señales de compra
+// ---------------------------------------------------------------------------
+const _SENALES = [
+  { re: /\bme interesa\b|\bme gustaria\b|\bsi quiero\b|\bquiero (uno|eso|contratar|ese)\b/, txt: "Señal de compra: mostró interés directo. Avanza al siguiente paso." },
+  { re: /\bcuanto (costaria|seria|cuesta|saldria|me sale)\b|\bque precio\b|\bcuanto tendria que pagar\b/, txt: "Preguntó por precio: buen momento para enmarcar el monto quincenal." },
+  { re: /\bcomo (le hago|contrato|le entro|empiezo|funciona)\b|\bque necesito\b|\bque sigue\b/, txt: "Preguntó cómo avanzar: guíalo al cierre." },
+  { re: /\bmis? hijos?\b|\bmi familia\b|\bmi esposa\b|\bmi esposo\b|\bmi pareja\b/, txt: "Mencionó a su familia: ancla emocional, profundiza ahí." },
+  { re: /\bme preocupa\b|\bme da miedo\b|\bque tal si\b|\by si me pasa\b|\bno quiero que\b/, txt: "Expresó una preocupación: conéctala con la protección." },
+];
+
+let _ultimaPistaTs = 0;
+let _ultimaPistaTxt = "";
+
+function analizarProactiva(texto) {
+  if (sesion.hadassahActiva === false) return;
+  if (typeof detectarNombreAsistente === "function" && detectarNombreAsistente(texto)) return; // dirigido a Iris
+  let pista = null;
+  let tipo = "senal";
+  if (typeof esObjecion === "function" && esObjecion(texto)) {
+    pista = "Posible objeción. Di «Iris» + la objeción y te doy un guion de rebate.";
+    tipo = "objecion";
+  } else {
+    const s = _sinAcentos(texto).toLowerCase();
+    for (const sig of _SENALES) {
+      if (sig.re.test(s)) { pista = sig.txt; break; }
+    }
+  }
+  if (!pista) return;
+  const ahora = Date.now();
+  if (pista === _ultimaPistaTxt || ahora - _ultimaPistaTs < 12000) return; // anti-spam
+  _ultimaPistaTs = ahora;
+  _ultimaPistaTxt = pista;
+  mostrarPista(pista, tipo);
+}
+
+let _pistaTimer = null;
+function mostrarPista(texto, tipo) {
+  const el = $("#iris-pista");
+  el.textContent = texto;
+  el.className = "iris-pista tipo-" + tipo;
+  clearTimeout(_pistaTimer);
+  _pistaTimer = setTimeout(() => el.classList.add("oculto"), 16000);
 }
 
 function crearTranscriptor() {
@@ -318,6 +364,23 @@ const HADASSAH_BADGE = {
   calculo: "🧮 Cálculo",
 };
 
+// estado de Iris -> [clase del avatar, texto junto al avatar]
+const AVATAR_ESTADO = {
+  esperando: ["estado-idle", "Lista para ayudarte"],
+  recolectando: ["estado-listening", "Te escucho…"],
+  pensando: ["estado-thinking", "Pensando…"],
+  hablando: ["estado-speaking", "Respondiendo…"],
+  privado: ["estado-idle", "Respuesta lista abajo"],
+};
+
+function actualizarAvatar(estado) {
+  const av = $("#iris-avatar");
+  if (!av) return;
+  const [clase, texto] = AVATAR_ESTADO[estado] || AVATAR_ESTADO.esperando;
+  av.className = "iris-avatar " + clase;
+  $("#iris-avatar-estado").textContent = texto;
+}
+
 function renderHadassah() {
   const historial = sesion.hadassah || [];
   const cont = $("#hadassah-historial");
@@ -354,6 +417,7 @@ function crearHadassah() {
       const el = $("#hadassah-estado");
       el.textContent = HADASSAH_ESTADOS[estado] || "";
       el.classList.toggle("trabajando", estado === "pensando" || estado === "hablando");
+      actualizarAvatar(estado);
     },
     onIntercambio: (pregunta, respuesta, tipo) => {
       sesion.hadassah = sesion.hadassah || [];
@@ -366,8 +430,69 @@ function crearHadassah() {
       guardarAhora();
       renderHadassah();
     },
+    onComando: manejarComando,
     onError: mostrarError,
   });
+}
+
+// Comandos de voz: "Iris, marca la 3", "Iris genera la asesoría", "Iris anota que…"
+function manejarComando(cmd) {
+  const confirmar = (t) => {
+    const el = $("#hadassah-estado");
+    el.textContent = t;
+    el.classList.remove("trabajando");
+  };
+  switch (cmd.accion) {
+    case "callar":
+      hadassah.callar();
+      confirmar("🔇 Silencio.");
+      break;
+    case "generar":
+      confirmar("🧠 Generando la asesoría…");
+      generar();
+      break;
+    case "modo":
+      sesion.hadassahModo = cmd.valor;
+      hadassah.modo = cmd.valor;
+      $("#hadassah-modo").value = cmd.valor;
+      guardarSesion();
+      confirmar(cmd.valor === "privada" ? "🤫 Modo privado activado." : "🔊 Modo en voz alta activado.");
+      break;
+    case "siguiente":
+      sesion.preguntaActiva = Math.min(sesion.preguntaActiva + 1, PREGUNTAS.length - 1);
+      guardarSesion();
+      renderPreguntas();
+      confirmar("➡️ Pregunta " + (sesion.preguntaActiva + 1) + ": " + PREGUNTAS[sesion.preguntaActiva].titulo);
+      break;
+    case "anterior":
+      sesion.preguntaActiva = Math.max(sesion.preguntaActiva - 1, 0);
+      guardarSesion();
+      renderPreguntas();
+      confirmar("⬅️ Pregunta " + (sesion.preguntaActiva + 1) + ": " + PREGUNTAS[sesion.preguntaActiva].titulo);
+      break;
+    case "marcar": {
+      const idx = cmd.valor - 1;
+      if (idx < 0 || idx >= PREGUNTAS.length) {
+        confirmar("No encontré la pregunta " + cmd.valor + ".");
+        break;
+      }
+      const id = PREGUNTAS[idx].id;
+      if (!sesion.preguntasHechas.includes(id)) sesion.preguntasHechas.push(id);
+      sesion.preguntaActiva = Math.min(idx + 1, PREGUNTAS.length - 1);
+      guardarAhora();
+      renderPreguntas();
+      confirmar("✓ Marqué la pregunta " + cmd.valor + " como respondida.");
+      break;
+    }
+    case "anota":
+      sesion.notasGenerales = (sesion.notasGenerales ? sesion.notasGenerales + "\n" : "") + cmd.valor;
+      $("#notas-generales").value = sesion.notasGenerales;
+      guardarAhora();
+      confirmar("📝 Anotado: " + cmd.valor.slice(0, 45) + (cmd.valor.length > 45 ? "…" : ""));
+      break;
+    default:
+      break;
+  }
 }
 
 async function preguntaManualHadassah() {
@@ -533,6 +658,7 @@ function sincronizarUI() {
   $("#notas-generales").value = sesion.notasGenerales;
   $("#aviso-consentimiento").classList.toggle("oculto", sesion.avisoCerrado);
   $("#interim").textContent = "";
+  $("#iris-pista").classList.add("oculto");
   $("#hadassah-toggle").checked = sesion.hadassahActiva !== false;
   $("#hadassah-modo").value = sesion.hadassahModo || "voz";
   if (hadassah) {
@@ -566,6 +692,7 @@ async function init() {
     if (e.key === "Enter") preguntaManualHadassah();
   });
   $("#hadassah-callar").addEventListener("click", () => hadassah.callar());
+  $("#iris-pista").addEventListener("click", (e) => e.currentTarget.classList.add("oculto"));
 
   $("#btn-mic").addEventListener("click", alternarMicrofono);
   $("#btn-opciones").addEventListener("click", () => chrome.runtime.openOptionsPage());
@@ -606,7 +733,10 @@ async function init() {
   $("#btn-pdf").addEventListener("click", () => {
     if (!sesion.asesoria) return;
     try {
-      generarPDF(sesion.asesoria, { nombreAsesor: sesion.nombreAsesor });
+      generarPDF(sesion.asesoria, {
+        nombreAsesor: sesion.nombreAsesor,
+        irisHistorial: sesion.hadassah || [],
+      });
     } catch (err) {
       mostrarError("No se pudo generar el PDF: " + err.message);
     }

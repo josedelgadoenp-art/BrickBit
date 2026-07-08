@@ -74,6 +74,32 @@ Iris distingue automáticamente qué le pides:
 de la llamada la captura y el cliente la oye como un participante más. (Con audífonos
 solo tú la escuchas, útil como apuntador privado.)
 
+### 🧑‍🎨 Avatar animado
+Iris tiene un **rostro animado** que reacciona en tiempo real: parpadea y respira en reposo,
+muestra un anillo verde cuando **te escucha**, uno violeta girando cuando **piensa**, y mueve
+los labios con un ecualizador cuando **habla**. (Es una ilustración animada del lado del
+navegador; un avatar de video foto-realista requeriría un servicio externo de pago.)
+
+### 🎙️ Comandos de voz (manos libres)
+Además de dudas, Iris entiende **órdenes** para controlar el copiloto sin tocar el teclado:
+
+| Di… | Hace |
+|---|---|
+| «Iris, marca la 3» | Marca la pregunta 3 como respondida y avanza |
+| «Iris, siguiente pregunta» / «pregunta anterior» | Navega la guía |
+| «Iris, anota que gana 40 mil» | Agrega eso a las notas generales |
+| «Iris, genera la asesoría» | Lanza el análisis con IA |
+| «Iris, modo privado» / «en voz alta» | Cambia cómo responde |
+| «Iris, cállate» | La detiene al instante |
+
+### 🧠 Iris proactiva
+Sin que la llames, Iris **escucha la conversación** y te sopla una **pista discreta** (solo
+para ti, nunca en voz alta) cuando detecta una **objeción** o una **señal de compra** —por
+ejemplo si el cliente pregunta el precio, menciona a su familia o expresa una preocupación.
+
+### 📄 Iris en el PDF
+Las dudas que Iris resolvió durante la llamada se agregan como **anexo** al PDF de la asesoría.
+
 ### 💡 Consejo sobre el audio
 
 El reconocimiento de voz usa tu micrófono. Si escuchas la llamada por **bocinas**, el

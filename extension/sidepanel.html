@@ -68,6 +68,78 @@
           <span>activa</span>
         </label>
       </div>
+
+      <div class="iris-avatar-wrap">
+        <div id="iris-avatar" class="iris-avatar estado-idle" aria-hidden="true">
+          <div class="avatar-glow"></div>
+          <svg class="avatar-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="ir-skin" cx="50%" cy="42%" r="62%">
+                <stop offset="0%" stop-color="#fbdcc4"/>
+                <stop offset="100%" stop-color="#e9b48f"/>
+              </radialGradient>
+              <linearGradient id="ir-hair" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#4a3327"/>
+                <stop offset="100%" stop-color="#33221a"/>
+              </linearGradient>
+              <linearGradient id="ir-bg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="#f26722"/>
+              </linearGradient>
+              <clipPath id="ir-clip"><circle cx="60" cy="60" r="54"/></clipPath>
+            </defs>
+            <circle cx="60" cy="60" r="54" fill="url(#ir-bg)"/>
+            <g clip-path="url(#ir-clip)">
+              <circle cx="60" cy="64" r="52" fill="#20233a"/>
+              <!-- cabello atrás -->
+              <path d="M22 66 Q20 24 60 22 Q100 24 98 66 L98 120 L22 120 Z" fill="url(#ir-hair)"/>
+              <!-- cuello -->
+              <rect x="50" y="86" width="20" height="24" rx="8" fill="#e3a97f"/>
+              <!-- rostro -->
+              <ellipse cx="60" cy="60" rx="27" ry="31" fill="url(#ir-skin)"/>
+              <!-- mejillas -->
+              <ellipse class="avatar-blush" cx="45" cy="66" rx="6" ry="4" fill="#f6a48c" opacity="0.5"/>
+              <ellipse class="avatar-blush" cx="75" cy="66" rx="6" ry="4" fill="#f6a48c" opacity="0.5"/>
+              <!-- cejas -->
+              <path d="M42 46 Q49 42 55 46" stroke="#4a3327" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+              <path d="M65 46 Q71 42 78 46" stroke="#4a3327" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+              <!-- ojos -->
+              <g class="avatar-eye">
+                <ellipse cx="49" cy="54" rx="6" ry="4.4" fill="#fff"/>
+                <circle cx="49" cy="54" r="3" fill="#6b4a2f"/>
+                <circle cx="49" cy="54" r="1.4" fill="#221"/>
+                <circle cx="50.4" cy="52.6" r="0.9" fill="#fff"/>
+                <rect class="avatar-lid" x="42.5" y="49" width="13" height="5.5" rx="2.5" fill="#f0c19b"/>
+              </g>
+              <g class="avatar-eye">
+                <ellipse cx="71" cy="54" rx="6" ry="4.4" fill="#fff"/>
+                <circle cx="71" cy="54" r="3" fill="#6b4a2f"/>
+                <circle cx="71" cy="54" r="1.4" fill="#221"/>
+                <circle cx="72.4" cy="52.6" r="0.9" fill="#fff"/>
+                <rect class="avatar-lid" x="64.5" y="49" width="13" height="5.5" rx="2.5" fill="#f0c19b"/>
+              </g>
+              <!-- nariz -->
+              <path d="M60 58 Q57 66 60 68" stroke="#d69b74" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+              <!-- boca -->
+              <g class="avatar-mouth">
+                <path class="avatar-lips" d="M52 76 Q60 80 68 76" stroke="#c66a5c" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+                <ellipse class="avatar-mouth-open" cx="60" cy="77" rx="6" ry="0.6" fill="#8a3b34"/>
+              </g>
+              <!-- cabello frente -->
+              <path d="M30 58 Q28 26 60 25 Q92 26 90 58 Q84 40 60 39 Q40 39 36 56 Q34 50 30 58 Z" fill="url(#ir-hair)"/>
+              <path d="M33 56 Q30 84 26 104" stroke="url(#ir-hair)" stroke-width="14" fill="none" stroke-linecap="round"/>
+              <path d="M87 56 Q90 84 94 104" stroke="url(#ir-hair)" stroke-width="14" fill="none" stroke-linecap="round"/>
+            </g>
+            <circle class="avatar-ring" cx="60" cy="60" r="55" fill="none" stroke="#fff" stroke-width="2.5" opacity="0.9"/>
+          </svg>
+          <div class="avatar-eq"><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="iris-avatar-lado">
+          <div class="iris-nombre">Iris</div>
+          <div id="iris-avatar-estado" class="iris-avatar-estado">Lista para ayudarte</div>
+        </div>
+      </div>
+
       <div class="hadassah-modo">
         <span>Responde:</span>
         <select id="hadassah-modo" title="En voz alta: el cliente la escucha. Privada: solo texto para ti.">
@@ -78,6 +150,7 @@
       <p id="hadassah-estado" class="hadassah-estado">
         Di «Iris» seguido de la duda y responderá con voz.
       </p>
+      <div id="iris-pista" class="iris-pista oculto" title="Pista de Iris (solo para ti)"></div>
       <div id="hadassah-historial" class="hadassah-historial oculto"></div>
       <div class="hadassah-manual">
         <input id="hadassah-input" type="text"

@@ -237,7 +237,7 @@ function _severidadColor(sev) {
   return PDF_COLORES.verde;
 }
 
-function generarPDF(asesoria, { nombreAsesor = "" } = {}) {
+function generarPDF(asesoria, { nombreAsesor = "", irisHistorial = [] } = {}) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const w = new EscritorPDF(doc);
@@ -479,6 +479,30 @@ function generarPDF(asesoria, { nombreAsesor = "" } = {}) {
   if (asesoria.siguiente_paso) {
     w.subtitulo("Siguiente paso");
     w.parrafo(asesoria.siguiente_paso);
+  }
+
+  // ---------- Anexo: dudas que resolvió Iris ----------
+  const dudasIris = (irisHistorial || []).filter((x) => x && x.tipo !== "objecion");
+  if (dudasIris.length) {
+    doc.addPage();
+    w.y = w.margen;
+    w.titulo("Anexo · Dudas resueltas por Iris");
+    w.parrafo(
+      "Durante la conversación, la asistente Iris respondió estas dudas con apoyo del " +
+        "catálogo GNP y búsqueda de información pública:",
+      { color: PDF_COLORES.gris }
+    );
+    w.espacio(2);
+    for (const x of dudasIris.slice(0, 25)) {
+      w.doc.setFont("helvetica", "bold");
+      w.doc.setFontSize(10);
+      w._salto(6);
+      w.doc.setTextColor(...PDF_COLORES.azul);
+      const preg = w.doc.splitTextToSize("P: " + String(x.pregunta || ""), w.anchoUtil);
+      w.doc.text(preg, w.margen, w.y);
+      w.y += preg.length * 5.2 + 1;
+      w.parrafo(String(x.respuesta || ""), { indent: 4, color: PDF_COLORES.gris });
+    }
   }
 
   // Disclaimer
