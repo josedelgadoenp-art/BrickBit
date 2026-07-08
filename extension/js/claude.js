@@ -17,6 +17,7 @@ const ESQUEMA_ASESORIA = {
     "plan_pago",
     "resumen_ejecutivo",
     "siguiente_paso",
+    "seguimiento",
   ],
   properties: {
     perfil: {
@@ -242,6 +243,28 @@ const ESQUEMA_ASESORIA = {
       type: "string",
       description: "Acción concreta de cierre para el asesor",
     },
+    seguimiento: {
+      type: "array",
+      description:
+        "Exactamente 3 mensajes de seguimiento post-llamada, personalizados con el nombre y la situación del prospecto, para que el asesor los envíe",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["momento", "canal", "mensaje"],
+        properties: {
+          momento: {
+            type: "string",
+            description: "Cuándo enviarlo, p. ej. 'Mismo día', 'A los 3 días', 'A la semana'",
+          },
+          canal: { type: "string", enum: ["whatsapp", "correo", "cualquiera"] },
+          mensaje: {
+            type: "string",
+            description:
+              "Mensaje listo para enviar, cálido y en primera persona del asesor, máximo 60 palabras, sin inventar precios ni condiciones",
+          },
+        },
+      },
+    },
   },
 };
 
@@ -286,6 +309,10 @@ propias palabras), después lo numérico. Usa los números del propio prospecto.
 7. Escribe en español mexicano, cálido, directo y profesional. Trata al prospecto por su nombre.
 8. respuestas debe tener exactamente 10 entradas con pregunta_num del 1 al 10 en orden; en las \
 preguntas que no se tocaron, pon dato_faltante=true y resume qué falta.
+8b. seguimiento debe traer 3 mensajes listos para enviar (mismo día, a los 3 días y a la semana), \
+cálidos, personalizados con el nombre del prospecto y su situación, en primera persona del asesor, \
+sin inventar precios. El de "mismo día" agradece la charla; el de "3 días" aporta un dato de valor \
+o resuelve una duda; el de "la semana" invita cordialmente a decidir.
 9. Datos de contexto útiles para el análisis: inflación médica en México ~11.5% anual, \
 inflación educativa ~8.2% anual, fondo de emergencia recomendado = 6 meses de gastos, \
 necesidad de protección familiar ≈ 5 años de gastos totales del hogar mientras haya \

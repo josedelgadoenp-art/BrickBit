@@ -6,6 +6,7 @@
 const SESION_VACIA = () => ({
   nombreProspecto: "",
   nombreAsesor: "",
+  telProspecto: "",
   preguntaActiva: 0,
   preguntasHechas: [],
   notasPregunta: {},
@@ -22,6 +23,9 @@ const SESION_VACIA = () => ({
 let sesion = SESION_VACIA();
 let transcriptor = null;
 let hadassah = null;
+let cfgTelAsesor = "";
+let cfgLigaCierre = "";
+const TEL_ASESOR_DEFAULT = "5584681927";
 let guardadoTimer = null;
 let revLocal = null; // última revisión escrita por ESTE panel (para ignorar el eco)
 
@@ -75,7 +79,11 @@ async function cargarSesion() {
 // Si hay otro panel abierto (otra ventana de Chrome), adoptar sus cambios en
 // vez de machacarlos con nuestra copia vieja.
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== "local" || !changes.sesion) return;
+  if (area !== "local") return;
+  if (changes.vozIris && hadassah) hadassah.vozPreferida = changes.vozIris.newValue || "";
+  if (changes.telAsesor) cfgTelAsesor = changes.telAsesor.newValue || "";
+  if (changes.ligaCierre) cfgLigaCierre = changes.ligaCierre.newValue || "";
+  if (!changes.sesion) return;
   const nueva = changes.sesion.newValue;
   if (!nueva || nueva._rev === revLocal) return;
   sesion = { ...SESION_VACIA(), ...nueva };
@@ -196,6 +204,11 @@ function renderPreguntas() {
   });
 
   $("#progreso-preguntas").textContent = `${sesion.preguntasHechas.length}/${PREGUNTAS.length}`;
+  actualizarEspejo();
+}
+
+function actualizarEspejo() {
+  if (typeof renderEspejo === "function") renderEspejo(sesion);
 }
 
 // ---------------------------------------------------------------------------
@@ -244,6 +257,7 @@ function alSegmentoFinal(texto, preguntaId) {
   sesion.transcriptPorPregunta[id].push(texto);
   guardarSesion();
   renderTranscript();
+  actualizarEspejo();
   hadassah?.procesarSegmento(texto);
   analizarProactiva(texto);
 }
@@ -532,6 +546,7 @@ async function generar() {
     sesion.asesoria = asesoria;
     guardarAhora();
     renderResultado();
+    actualizarEspejo();
     $("#resultado").scrollIntoView({ behavior: "smooth" });
   } catch (err) {
     mostrarError(err.message);
@@ -617,8 +632,120 @@ function renderResultado() {
     html.push(`<h3>Siguiente paso</h3><p>${esc(a.siguiente_paso)}</p>`);
   }
 
+  html.push(`<h3>📱 Cierre en la llamada</h3>`);
+  html.push(
+    `<p class="cierre-hint">Muéstrale este código al cliente para que lo escanee y te contacte al instante.</p>`
+  );
+  html.push(`<div id="qr-cierre" class="qr-cierre"></div>`);
+
+  if ((a.seguimiento || []).length) {
+    html.push(`<h3>📈 Seguimiento sugerido</h3>`);
+    html.push(
+      `<input id="tel-prospecto" class="seg-tel-input" inputmode="numeric" placeholder="WhatsApp del prospecto (10 dígitos)" />`
+    );
+    html.push(`<div id="seg-lista"></div>`);
+  }
+
   $("#resultado-contenido").innerHTML = html.join("");
+  poblarCierre(a);
   $("#resultado").classList.remove("oculto");
+}
+
+// URL que abre el QR de cierre (liga de agenda/pago si existe; si no, WhatsApp al asesor).
+function urlCierre() {
+  if (cfgLigaCierre) return cfgLigaCierre;
+  const tel = (cfgTelAsesor || TEL_ASESOR_DEFAULT).replace(/\D/g, "");
+  const nombre = sesion.nombreProspecto || "un prospecto";
+  const asesor = sesion.nombreAsesor ? " " + sesion.nombreAsesor : "";
+  const prod = sesion.asesoria?.recomendacion?.producto_principal?.nombre || "mi plan";
+  const msg = `Hola${asesor}, soy ${nombre}. Revisé mi análisis financiero de GNP y me interesa avanzar con ${prod}. ¿Cómo seguimos?`;
+  return `https://wa.me/52${tel}?text=${encodeURIComponent(msg)}`;
+}
+
+function poblarCierre(a) {
+  // QR de cierre
+  const cont = $("#qr-cierre");
+  if (cont && typeof qrcode === "function") {
+    try {
+      const qr = qrcode(0, "M");
+      qr.addData(urlCierre());
+      qr.make();
+      cont.innerHTML = `<img class="qr-img" alt="Código QR de cierre" src="${qr.createDataURL(5, 6)}">`;
+      const cap = document.createElement("div");
+      cap.className = "qr-cap";
+      cap.textContent = cfgLigaCierre ? "Abre tu liga de agenda/pago" : "Abre WhatsApp para escribirte";
+      cont.appendChild(cap);
+    } catch (_) {
+      cont.textContent = "No se pudo generar el QR.";
+    }
+  }
+
+  // Seguimiento
+  const lista = $("#seg-lista");
+  if (!lista) return;
+  const tel = $("#tel-prospecto");
+  if (tel) {
+    tel.value = sesion.telProspecto || "";
+    tel.addEventListener("input", () => {
+      sesion.telProspecto = tel.value.replace(/\D/g, "");
+      guardarSesion();
+    });
+  }
+  lista.innerHTML = "";
+  for (const m of a.seguimiento || []) {
+    const item = document.createElement("div");
+    item.className = "seg-item";
+
+    const cab = document.createElement("div");
+    cab.className = "seg-momento";
+    cab.textContent = m.momento + (m.canal && m.canal !== "cualquiera" ? " · " + m.canal : "");
+
+    const msg = document.createElement("p");
+    msg.className = "seg-msg";
+    msg.textContent = m.mensaje;
+
+    const acc = document.createElement("div");
+    acc.className = "seg-acciones";
+
+    const bWa = document.createElement("button");
+    bWa.className = "btn btn-secundario";
+    bWa.textContent = "📲 WhatsApp";
+    bWa.addEventListener("click", () => {
+      const p = (sesion.telProspecto || "").replace(/\D/g, "");
+      if (!p) {
+        mostrarError("Escribe el WhatsApp del prospecto (10 dígitos) arriba.");
+        return;
+      }
+      window.open(`https://wa.me/52${p}?text=${encodeURIComponent(m.mensaje)}`, "_blank");
+    });
+
+    const bMail = document.createElement("button");
+    bMail.className = "btn btn-secundario";
+    bMail.textContent = "✉️ Correo";
+    bMail.addEventListener("click", () => {
+      window.open(
+        `mailto:?subject=${encodeURIComponent("Seguimiento · GNP")}&body=${encodeURIComponent(m.mensaje)}`,
+        "_blank"
+      );
+    });
+
+    const bCopy = document.createElement("button");
+    bCopy.className = "btn btn-liga";
+    bCopy.textContent = "Copiar";
+    bCopy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(m.mensaje);
+        bCopy.textContent = "✓ Copiado";
+        setTimeout(() => (bCopy.textContent = "Copiar"), 1500);
+      } catch (_) {
+        /* clipboard no disponible */
+      }
+    });
+
+    acc.append(bWa, bMail, bCopy);
+    item.append(cab, msg, acc);
+    lista.appendChild(item);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -674,6 +801,13 @@ function sincronizarUI() {
 async function init() {
   await cargarSesion();
   hadassah = crearHadassah();
+  chrome.storage.local.get(["vozIris", "telAsesor", "ligaCierre"]).then(
+    ({ vozIris, telAsesor, ligaCierre }) => {
+      if (hadassah) hadassah.vozPreferida = vozIris || "";
+      cfgTelAsesor = telAsesor || "";
+      cfgLigaCierre = ligaCierre || "";
+    }
+  );
   sincronizarUI();
 
   $("#hadassah-toggle").addEventListener("change", (e) => {
@@ -712,6 +846,7 @@ async function init() {
   $("#notas-generales").addEventListener("input", (e) => {
     sesion.notasGenerales = e.target.value;
     guardarSesion();
+    actualizarEspejo();
   });
   $("#btn-limpiar-transcript").addEventListener("click", (e) => {
     if (!sesion.transcript.length) return;

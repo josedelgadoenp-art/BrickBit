@@ -100,6 +100,31 @@ ejemplo si el cliente pregunta el precio, menciona a su familia o expresa una pr
 ### 📄 Iris en el PDF
 Las dudas que Iris resolvió durante la llamada se agregan como **anexo** al PDF de la asesoría.
 
+### 🗣️ Voz configurable
+En **opciones** puedes elegir la voz de Iris entre las disponibles en tu sistema y **probarla**
+antes de guardar (las voces varían por computadora; se sugiere instalar voces naturales en
+español desde la configuración del sistema operativo). Si no eliges ninguna, Iris toma
+automáticamente la mejor voz femenina disponible.
+
+## 🪞 Espejo del Futuro
+
+Una tarjeta con un **gráfico en vivo** de dos trayectorias a 20 años —**con tu plan GNP**
+(estable) vs. **sin protección** (con caídas por imprevistos)— que se **separan conforme
+avanza la llamada** y se detecta más riesgo (dependientes, sin seguro propio, deudas). Cierra
+con el dato de impacto: *"en el peor momento, sin protección perderías hasta X% de tu
+patrimonio"*. Es una herramienta visual y emotiva para cerrar.
+
+## 📱 Cierre y seguimiento
+
+Al generar la asesoría, el panel agrega:
+
+- **QR de cierre:** un código que el cliente escanea para **escribirte al instante por WhatsApp**
+  (tu número se configura en opciones; por defecto usa el del asesor). Si prefieres, puedes
+  poner una **liga de agenda o pago** y el QR la usará en su lugar.
+- **Seguimiento sugerido:** Iris redacta **3 mensajes** personalizados (mismo día, a los 3 días
+  y a la semana) con botones de un clic para **enviarlos por WhatsApp o correo**, o copiarlos.
+  (El envío es manual/asistido; el envío automático programado requeriría un servidor.)
+
 ### 💡 Consejo sobre el audio
 
 El reconocimiento de voz usa tu micrófono. Si escuchas la llamada por **bocinas**, el

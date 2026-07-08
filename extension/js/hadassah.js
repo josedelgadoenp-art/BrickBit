@@ -159,6 +159,7 @@ class HadassahVoz {
     this.onError = onError;
     this.onComando = onComando; // (cmd) => void — comandos de voz
     this.activa = true;
+    this.vozPreferida = ""; // nombre de voz elegido en opciones ("" = automática)
     this.modo = "voz"; // "voz" (en voz alta) | "privada" (solo texto para el asesor)
     this.estado = "esperando"; // esperando | recolectando | pensando | hablando | privado
     this._pregunta = "";
@@ -268,6 +269,16 @@ class HadassahVoz {
     this._setEstado("privado");
   }
 
+  // Voz a usar: la elegida en opciones si está disponible; si no, automática.
+  _voz() {
+    const voces = "speechSynthesis" in window ? speechSynthesis.getVoices() : [];
+    if (this.vozPreferida) {
+      const v = voces.find((x) => x.name === this.vozPreferida);
+      if (v) return v;
+    }
+    return _elegirVozEspanol();
+  }
+
   _hablar(texto) {
     if (!this.activa || !("speechSynthesis" in window)) {
       this._setEstado("esperando");
@@ -278,7 +289,7 @@ class HadassahVoz {
 
     // Chrome puede atascarse con locuciones largas: trocear por oraciones.
     const trozos = String(texto).match(/[^.!?]+[.!?]*/g) || [String(texto)];
-    const voz = _elegirVozEspanol();
+    const voz = this._voz();
     let pendientes = trozos.length;
     const terminar = () => {
       clearTimeout(this._ttsSafety);
