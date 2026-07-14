@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Asistente Claude — Pantalla y Voz",
+  "version": "0.1.0",
+  "description": "Asistente de voz de Claude que ve tu pantalla mientras trabajas: hablas, te escucha, mira la captura y te responde con voz. Puede conectarse con tu sesión de Claude Code mediante un puente local.",
+  "action": {
+    "default_title": "Abrir Asistente Claude"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["sidePanel", "storage"],
+  "host_permissions": [
+    "https://api.anthropic.com/*",
+    "http://127.0.0.1:8787/*"
+  ]
+}

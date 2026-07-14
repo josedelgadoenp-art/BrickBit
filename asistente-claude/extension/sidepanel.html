@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Asistente Claude</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <header>
+    <div class="title">
+      <span id="statusDot" class="dot"></span>
+      <h1>Asistente Claude</h1>
+    </div>
+    <div class="header-actions">
+      <button id="btnSettings" class="icon-btn" title="Ajustes">⚙️</button>
+    </div>
+  </header>
+
+  <div id="statusBar" class="status-bar">Listo. Comparte tu pantalla y activa el micrófono para empezar.</div>
+
+  <main id="chat" class="chat" aria-live="polite"></main>
+
+  <!-- vídeo oculto que mantiene la captura de pantalla -->
+  <video id="preview" muted playsinline></video>
+
+  <section id="settings" class="settings hidden">
+    <h2>Ajustes</h2>
+
+    <label class="field">
+      <span>Modo de conexión</span>
+      <select id="setMode">
+        <option value="api">API de Claude (directo, necesita clave)</option>
+        <option value="bridge">Claude Code (puente local — continúa tu sesión)</option>
+      </select>
+    </label>
+
+    <div id="apiSettings">
+      <label class="field">
+        <span>Clave de API de Anthropic</span>
+        <input id="setApiKey" type="password" placeholder="sk-ant-..." autocomplete="off" />
+      </label>
+      <label class="field">
+        <span>Modelo</span>
+        <select id="setModel">
+          <option value="claude-opus-4-8">Claude Opus 4.8 (recomendado)</option>
+          <option value="claude-sonnet-5">Claude Sonnet 5 (más rápido y barato)</option>
+          <option value="claude-haiku-4-5">Claude Haiku 4.5 (el más rápido)</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Profundidad de razonamiento</span>
+        <select id="setEffort">
+          <option value="low">Rápida (respuestas ágiles)</option>
+          <option value="medium">Media</option>
+          <option value="high">Alta (más lenta, más profunda)</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="bridgeSettings" class="hidden">
+      <label class="field">
+        <span>Dirección del puente local</span>
+        <input id="setBridgeUrl" type="text" placeholder="ws://127.0.0.1:8787" />
+      </label>
+      <p class="hint">Arranca el puente en tu ordenador con:<br /><code>node server.mjs /ruta/de/tu/proyecto</code><br />La primera pregunta continúa la conversación más reciente de Claude Code en ese proyecto.</p>
+    </div>
+
+    <label class="field">
+      <span>Idioma de voz</span>
+      <select id="setLanguage">
+        <option value="es-ES">Español (España)</option>
+        <option value="es-MX">Español (México)</option>
+        <option value="es-AR">Español (Argentina)</option>
+        <option value="en-US">English (US)</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Voz de respuesta</span>
+      <select id="setVoice"><option value="">(voz por defecto)</option></select>
+    </label>
+
+    <label class="check"><input id="setAutoSend" type="checkbox" /> Enviar automáticamente al terminar de hablar</label>
+    <label class="check"><input id="setSpeak" type="checkbox" /> Leer las respuestas en voz alta</label>
+    <label class="check"><input id="setAttach" type="checkbox" /> Adjuntar captura de pantalla en cada pregunta</label>
+
+    <button id="btnCloseSettings" class="primary">Guardar y cerrar</button>
+  </section>
+
+  <footer>
+    <div class="controls">
+      <button id="btnShare" class="ctl" title="Compartir pantalla">🖥️ <span>Compartir</span></button>
+      <button id="btnMic" class="ctl" title="Micrófono">🎤 <span>Micrófono</span></button>
+      <button id="btnStopVoice" class="ctl" title="Callar la voz">🔇 <span>Callar</span></button>
+      <button id="btnStop" class="ctl warn hidden" title="Detener respuesta">⏹️ <span>Detener</span></button>
+    </div>
+    <div class="input-row">
+      <textarea id="input" rows="1" placeholder="Habla o escribe tu pregunta…"></textarea>
+      <button id="btnSend" class="primary" title="Enviar">➤</button>
+    </div>
+    <div id="interim" class="interim"></div>
+  </footer>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "asistente-claude-puente",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Puente local entre la extensión 'Asistente Claude — Pantalla y Voz' y tu sesión de Claude Code (Agent SDK).",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "latest",
+    "ws": "^8.18.0"
+  }
+}
