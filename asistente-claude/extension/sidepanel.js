@@ -11,6 +11,26 @@
 const $ = (id) => document.getElementById(id);
 const icon = (name) => `<svg class="ic"><use href="#i-${name}"/></svg>`;
 
+/* ---------------- marca (white-label) ---------------- */
+function applyBrand() {
+  const b = window.BRAND;
+  if (!b) return;
+  const root = document.documentElement;
+  if (b.brand) root.style.setProperty('--brand', b.brand);
+  if (b.brand2) root.style.setProperty('--brand-2', b.brand2);
+  if (b.name) { $('brandName').textContent = b.name; document.title = b.name; }
+  if (b.subtitle) $('brandSub').textContent = b.subtitle;
+  if (b.logo) {
+    const img = new Image();
+    img.src = b.logo;
+    img.alt = b.name || '';
+    img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:inherit';
+    img.onload = () => { const m = $('brandMark'); m.innerHTML = ''; m.style.background = 'transparent'; m.style.boxShadow = 'none'; m.appendChild(img); };
+  }
+  if (b.welcomeTitle && $('emptyState')) { const h = $('emptyState').querySelector('h2'); if (h) h.textContent = b.welcomeTitle; }
+  if (b.welcomeText && $('emptyState')) { const p = $('emptyState').querySelector('p'); if (p) p.textContent = b.welcomeText; }
+}
+
 const SYSTEM_PROMPT = `Eres un asistente de voz que ayuda al usuario mientras usa su ordenador.
 Recibes sus preguntas transcritas por voz y, normalmente, una captura de su pantalla.
 Normas:
@@ -689,6 +709,7 @@ function bindUI() {
 }
 
 (async function init() {
+  applyBrand();
   bindUI();
   await loadSettings();
 })();

@@ -55,7 +55,11 @@ Por defecto habla con la voz del navegador (gratis). Para una voz mucho más nat
 
 ### Apariencia
 
-La interfaz tiene **tema claro y oscuro** (botón de la cabecera; sigue el del sistema por defecto) y todo el color parte de una sola variable CSS `--brand`, así que rebrandearla a los colores de una organización es cambiar una línea en `sidepanel.css`.
+La interfaz tiene **tema claro y oscuro** (botón de la cabecera; sigue el del sistema por defecto).
+
+### Marca (white-label)
+
+Para adaptar la extensión a una organización, edita **solo** `extension/brand.js`: nombre, subtítulo, colores (`brand` / `brand2`) y, opcionalmente, un logotipo en `extension/brand/`. No hace falta tocar el CSS ni el HTML. El repositorio incluye el perfil de **GNP** ya cargado como ejemplo (naranja de marca; confirma el tono exacto y coloca el logotipo oficial siguiendo `extension/brand/LEEME.txt`).
 
 ### Modo B — Claude Code (continúa tu sesión)
 

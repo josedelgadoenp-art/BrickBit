@@ -1,0 +1,18 @@
+Logotipo de marca
+=================
+
+Para mostrar el logotipo oficial en la cabecera del asistente:
+
+1. Copia aquí el logo oficial (idealmente PNG con fondo transparente,
+   o SVG), por ejemplo:  brand/logo.png
+2. En  ../brand.js  descomenta la línea "logo" y pon la ruta:
+       logo: 'brand/logo.png',
+3. Recarga la extensión en chrome://extensions.
+
+Si no defines un logo, se usa un icono genérico con los colores de marca.
+
+IMPORTANTE (marca GNP):
+- Confirma el naranja EXACTO en el manual de identidad de GNP y ponlo
+  en brand.js (campos "brand" y "brand2"). El valor actual es aproximado.
+- Usa el logotipo únicamente con autorización de GNP. Esta es una
+  propuesta comercial; no es material oficial de GNP.
