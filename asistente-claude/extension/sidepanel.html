@@ -7,100 +7,190 @@
   <link rel="stylesheet" href="sidepanel.css" />
 </head>
 <body>
-  <header>
-    <div class="title">
-      <span id="statusDot" class="dot"></span>
-      <h1>Asistente Claude</h1>
+  <!-- Sprite de iconos (SVG) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-mic" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v4"/></symbol>
+    <symbol id="i-screen" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 4h18v12H3zM8 20h8M12 16v4"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path fill="currentColor" d="M3 11.5 21 3l-8.5 18-2.2-7.3L3 11.5z"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 7 2.6h.1A1.6 1.6 0 0 0 8 1.1V1a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 17 2.6a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V7a1.6 1.6 0 0 0 1.5 1H23a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2l1.9 5.6L19.5 9.5 13.9 11.4 12 17l-1.9-5.6L4.5 9.5l5.6-1.9zM19 15l.8 2.4L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.6z"/></symbol>
+  </svg>
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark"><svg class="ic"><use href="#i-spark"/></svg></span>
+      <div class="brand-text">
+        <strong id="brandName">Asistente Claude</strong>
+        <span class="brand-sub">pantalla + voz</span>
+      </div>
     </div>
     <div class="header-actions">
-      <button id="btnSettings" class="icon-btn" title="Ajustes">⚙️</button>
+      <span id="statusPill" class="pill"><span id="statusDot" class="dot"></span><span id="statusText">Listo</span></span>
+      <button id="btnTheme" class="icon-btn" title="Cambiar tema"><svg class="ic"><use href="#i-moon"/></svg></button>
+      <button id="btnSettings" class="icon-btn" title="Ajustes"><svg class="ic"><use href="#i-gear"/></svg></button>
     </div>
   </header>
 
-  <div id="statusBar" class="status-bar">Listo. Comparte tu pantalla y activa el micrófono para empezar.</div>
+  <main id="chat" class="chat" aria-live="polite">
+    <section id="emptyState" class="empty">
+      <div class="orb"><span></span><span></span><span></span></div>
+      <h2>Hola 👋</h2>
+      <p>Comparte tu pantalla, activa el micrófono y pregúntame en voz alta. Te veo y te respondo mientras trabajas.</p>
+      <div class="chips">
+        <button class="chip" data-q="¿Qué estoy viendo en esta pantalla?">¿Qué veo aquí?</button>
+        <button class="chip" data-q="Explícame paso a paso lo que hay en la pantalla.">Explícamelo paso a paso</button>
+        <button class="chip" data-q="¿Qué debería hacer ahora en esta pantalla?">¿Qué hago ahora?</button>
+      </div>
+    </section>
+  </main>
 
-  <main id="chat" class="chat" aria-live="polite"></main>
-
-  <!-- vídeo oculto que mantiene la captura de pantalla -->
   <video id="preview" muted playsinline></video>
 
-  <section id="settings" class="settings hidden">
-    <h2>Ajustes</h2>
-
-    <label class="field">
-      <span>Modo de conexión</span>
-      <select id="setMode">
-        <option value="api">API de Claude (directo, necesita clave)</option>
-        <option value="bridge">Claude Code (puente local — continúa tu sesión)</option>
-      </select>
-    </label>
-
-    <div id="apiSettings">
-      <label class="field">
-        <span>Clave de API de Anthropic</span>
-        <input id="setApiKey" type="password" placeholder="sk-ant-..." autocomplete="off" />
-      </label>
-      <label class="field">
-        <span>Modelo</span>
-        <select id="setModel">
-          <option value="claude-opus-4-8">Claude Opus 4.8 (recomendado)</option>
-          <option value="claude-sonnet-5">Claude Sonnet 5 (más rápido y barato)</option>
-          <option value="claude-haiku-4-5">Claude Haiku 4.5 (el más rápido)</option>
-        </select>
-      </label>
-      <label class="field">
-        <span>Profundidad de razonamiento</span>
-        <select id="setEffort">
-          <option value="low">Rápida (respuestas ágiles)</option>
-          <option value="medium">Media</option>
-          <option value="high">Alta (más lenta, más profunda)</option>
-        </select>
-      </label>
-    </div>
-
-    <div id="bridgeSettings" class="hidden">
-      <label class="field">
-        <span>Dirección del puente local</span>
-        <input id="setBridgeUrl" type="text" placeholder="ws://127.0.0.1:8787" />
-      </label>
-      <p class="hint">Arranca el puente en tu ordenador con:<br /><code>node server.mjs /ruta/de/tu/proyecto</code><br />La primera pregunta continúa la conversación más reciente de Claude Code en ese proyecto.</p>
-    </div>
-
-    <label class="field">
-      <span>Idioma de voz</span>
-      <select id="setLanguage">
-        <option value="es-ES">Español (España)</option>
-        <option value="es-MX">Español (México)</option>
-        <option value="es-AR">Español (Argentina)</option>
-        <option value="en-US">English (US)</option>
-      </select>
-    </label>
-
-    <label class="field">
-      <span>Voz de respuesta</span>
-      <select id="setVoice"><option value="">(voz por defecto)</option></select>
-    </label>
-
-    <label class="check"><input id="setAutoSend" type="checkbox" /> Enviar automáticamente al terminar de hablar</label>
-    <label class="check"><input id="setSpeak" type="checkbox" /> Leer las respuestas en voz alta</label>
-    <label class="check"><input id="setAttach" type="checkbox" /> Adjuntar captura de pantalla en cada pregunta</label>
-
-    <button id="btnCloseSettings" class="primary">Guardar y cerrar</button>
-  </section>
-
-  <footer>
-    <div class="controls">
-      <button id="btnShare" class="ctl" title="Compartir pantalla">🖥️ <span>Compartir</span></button>
-      <button id="btnMic" class="ctl" title="Micrófono">🎤 <span>Micrófono</span></button>
-      <button id="btnStopVoice" class="ctl" title="Callar la voz">🔇 <span>Callar</span></button>
-      <button id="btnStop" class="ctl warn hidden" title="Detener respuesta">⏹️ <span>Detener</span></button>
-    </div>
+  <footer class="dock">
+    <div id="interim" class="interim"></div>
     <div class="input-row">
       <textarea id="input" rows="1" placeholder="Habla o escribe tu pregunta…"></textarea>
-      <button id="btnSend" class="primary" title="Enviar">➤</button>
+      <button id="btnSend" class="send-btn" title="Enviar"><svg class="ic"><use href="#i-send"/></svg></button>
     </div>
-    <div id="interim" class="interim"></div>
+    <div class="controls">
+      <button id="btnShare" class="ctl" title="Compartir pantalla">
+        <svg class="ic"><use href="#i-screen"/></svg><span>Compartir</span>
+      </button>
+      <button id="btnMic" class="ctl mic" title="Micrófono">
+        <span class="wave"><i></i><i></i><i></i><i></i><i></i></span>
+        <svg class="ic"><use href="#i-mic"/></svg><span>Micrófono</span>
+      </button>
+      <button id="btnMute" class="ctl" title="Callar la voz">
+        <svg class="ic"><use href="#i-volume"/></svg><span>Voz</span>
+      </button>
+      <button id="btnStop" class="ctl danger hidden" title="Detener respuesta">
+        <svg class="ic"><use href="#i-stop"/></svg><span>Detener</span>
+      </button>
+    </div>
   </footer>
+
+  <!-- Panel de ajustes -->
+  <div id="settings" class="sheet hidden">
+    <div class="sheet-head">
+      <h2>Ajustes</h2>
+      <button id="btnCloseX" class="icon-btn"><svg class="ic"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="sheet-body">
+
+      <div class="group">
+        <div class="group-title">Conexión</div>
+        <label class="field">
+          <span>Modo</span>
+          <select id="setMode">
+            <option value="api">API de Claude (directo, necesita clave)</option>
+            <option value="bridge">Claude Code (puente local — continúa tu sesión)</option>
+          </select>
+        </label>
+        <div id="apiSettings">
+          <label class="field">
+            <span>Clave de API de Anthropic</span>
+            <input id="setApiKey" type="password" placeholder="sk-ant-…" autocomplete="off" />
+          </label>
+          <div class="row2">
+            <label class="field">
+              <span>Modelo</span>
+              <select id="setModel">
+                <option value="claude-opus-4-8">Opus 4.8 (recomendado)</option>
+                <option value="claude-sonnet-5">Sonnet 5 (rápido)</option>
+                <option value="claude-haiku-4-5">Haiku 4.5 (el más rápido)</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Razonamiento</span>
+              <select id="setEffort">
+                <option value="low">Rápido</option>
+                <option value="medium">Medio</option>
+                <option value="high">Profundo</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div id="bridgeSettings" class="hidden">
+          <label class="field">
+            <span>Dirección del puente local</span>
+            <input id="setBridgeUrl" type="text" placeholder="ws://127.0.0.1:8787" />
+          </label>
+          <p class="hint">Arranca en tu ordenador: <code>node server.mjs /ruta/de/tu/proyecto</code></p>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Voz</div>
+        <label class="field">
+          <span>Motor de voz</span>
+          <select id="setTtsProvider">
+            <option value="browser">Navegador (gratis, básico)</option>
+            <option value="elevenlabs">ElevenLabs (natural, de pago)</option>
+          </select>
+        </label>
+
+        <div id="browserVoice">
+          <label class="field">
+            <span>Voz del navegador</span>
+            <select id="setVoice"><option value="">(voz por defecto)</option></select>
+          </label>
+        </div>
+
+        <div id="elevenVoice" class="hidden">
+          <label class="field">
+            <span>Clave de API de ElevenLabs</span>
+            <input id="setElevenKey" type="password" placeholder="sk_…" autocomplete="off" />
+          </label>
+          <div class="row2">
+            <label class="field">
+              <span>Modelo</span>
+              <select id="setElevenModel">
+                <option value="eleven_flash_v2_5">Flash v2.5 (rápido)</option>
+                <option value="eleven_turbo_v2_5">Turbo v2.5</option>
+                <option value="eleven_multilingual_v2">Multilingual v2 (calidad)</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Voz</span>
+              <select id="setElevenVoice"><option value="">(carga tus voces)</option></select>
+            </label>
+          </div>
+          <div class="row2">
+            <button id="btnLoadVoices" class="btn-secondary">Cargar mis voces</button>
+            <button id="btnTestVoice" class="btn-secondary">Probar voz</button>
+          </div>
+          <p class="hint">Consíguela en elevenlabs.io → perfil → API Keys.</p>
+        </div>
+
+        <label class="field">
+          <span>Idioma de reconocimiento</span>
+          <select id="setLanguage">
+            <option value="es-MX">Español (México)</option>
+            <option value="es-ES">Español (España)</option>
+            <option value="es-AR">Español (Argentina)</option>
+            <option value="en-US">English (US)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Comportamiento</div>
+        <label class="switch"><input id="setAutoSend" type="checkbox" /><span class="track"></span> Enviar al terminar de hablar</label>
+        <label class="switch"><input id="setSpeak" type="checkbox" /><span class="track"></span> Leer las respuestas en voz alta</label>
+        <label class="switch"><input id="setAttach" type="checkbox" /><span class="track"></span> Adjuntar captura en cada pregunta</label>
+      </div>
+
+    </div>
+    <div class="sheet-foot">
+      <button id="btnCloseSettings" class="btn-primary">Guardar y cerrar</button>
+    </div>
+  </div>
 
   <script src="sidepanel.js"></script>
 </body>

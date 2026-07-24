@@ -20,6 +20,7 @@
   "permissions": ["sidePanel", "storage"],
   "host_permissions": [
     "https://api.anthropic.com/*",
+    "https://api.elevenlabs.io/*",
     "http://127.0.0.1:8787/*"
   ]
 }

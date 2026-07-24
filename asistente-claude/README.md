@@ -4,7 +4,7 @@ Extensión de Chrome que convierte a Claude en tu asistente mientras usas el ord
 
 - **Ve tu pantalla**: compartes pantalla una vez y, con cada pregunta, envía una captura actual a Claude.
 - **Te escucha**: hablas con tu voz (reconocimiento de voz del navegador, en español u otros idiomas).
-- **Te responde con voz**: lee las respuestas en voz alta mientras van llegando.
+- **Te responde con voz**: lee las respuestas en voz alta mientras van llegando, con la voz del navegador o con **ElevenLabs** (voz natural y multilingüe).
 - **Se conecta con Claude Code**: mediante un pequeño puente local, tus preguntas por voz **continúan la misma conversación de Claude Code** que tienes en tu proyecto (con su memoria, sus herramientas y tus permisos).
 
 ## ¿Qué es posible y qué no? (respuesta honesta)
@@ -41,6 +41,21 @@ asistente-claude/
 3. Listo. Modelo recomendado: **Claude Opus 4.8**.
 
 > 💰 Coste orientativo: cada pregunta con captura son ~1.500–2.500 tokens de entrada. La "profundidad de razonamiento" en *Rápida* da respuestas más ágiles y baratas.
+
+### Voz natural con ElevenLabs (opcional)
+
+Por defecto habla con la voz del navegador (gratis). Para una voz mucho más natural:
+
+1. En Ajustes ⚙️ → **Motor de voz** elige **ElevenLabs**.
+2. Pega tu clave de ElevenLabs (elevenlabs.io → perfil → *API Keys*).
+3. Pulsa **Cargar mis voces**, elige una de tu cuenta y **Probar voz**.
+4. Modelo recomendado para asistente en vivo: **Flash v2.5** (baja latencia). Para máxima calidad, *Multilingual v2*.
+
+> El audio se genera frase a frase durante la respuesta (con precarga de la siguiente para reducir pausas). Si ElevenLabs falla, cae automáticamente a la voz del navegador.
+
+### Apariencia
+
+La interfaz tiene **tema claro y oscuro** (botón de la cabecera; sigue el del sistema por defecto) y todo el color parte de una sola variable CSS `--brand`, así que rebrandearla a los colores de una organización es cambiar una línea en `sidepanel.css`.
 
 ### Modo B — Claude Code (continúa tu sesión)
 

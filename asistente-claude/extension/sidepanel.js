@@ -2,33 +2,38 @@
 
 /* ============================================================
    Asistente Claude — Pantalla y Voz (panel lateral)
-   - Captura de pantalla con getDisplayMedia (fotogramas bajo demanda)
-   - Voz del usuario con Web Speech API (SpeechRecognition)
-   - Respuestas habladas con speechSynthesis
-   - Modo "api": llama directamente a la API de Anthropic (streaming)
-   - Modo "bridge": WebSocket a un puente local que continúa tu
-     conversación de Claude Code (Agent SDK)
+   - Captura de pantalla (getDisplayMedia) → fotograma por pregunta
+   - Voz del usuario: Web Speech API (SpeechRecognition)
+   - Voz del asistente: navegador (speechSynthesis) o ElevenLabs
+   - Conexión: API de Anthropic (streaming) o puente a Claude Code
    ============================================================ */
 
 const $ = (id) => document.getElementById(id);
+const icon = (name) => `<svg class="ic"><use href="#i-${name}"/></svg>`;
 
 const SYSTEM_PROMPT = `Eres un asistente de voz que ayuda al usuario mientras usa su ordenador.
 Recibes sus preguntas transcritas por voz y, normalmente, una captura de su pantalla.
 Normas:
-- Responde en el idioma en el que hable el usuario (por defecto, español).
+- Responde en el idioma en el que hable el usuario (por defecto, español de México).
 - Tus respuestas se leen en voz alta: usa frases cortas y naturales, sin markdown, sin asteriscos, sin listas con símbolos ni encabezados.
-- Si te preguntan por algo visible en la captura, básate en ella. Si no se distingue bien, dilo y pide que amplíen o acerquen esa zona.
+- Si te preguntan por algo visible en la captura, básate en ella. Si no se distingue bien, dilo y pide que amplíen esa zona.
 - Cuando guíes al usuario, da los pasos de uno en uno y espera a que pregunte por el siguiente si la tarea es larga.
 - No leas en voz alta fragmentos largos de código; descríbelos y di dónde están.
 - La transcripción de voz puede traer erratas: interpreta la intención con sentido común.`;
 
 const DEFAULTS = {
+  theme: 'auto',
   mode: 'api',
   apiKey: '',
   model: 'claude-opus-4-8',
   effort: 'low',
-  language: 'es-ES',
+  language: 'es-MX',
+  ttsProvider: 'browser',
   voiceName: '',
+  elevenKey: '',
+  elevenModel: 'eleven_flash_v2_5',
+  elevenVoiceId: '',
+  elevenVoiceName: '',
   autoSend: true,
   speakReplies: true,
   attachScreenshot: true,
@@ -38,33 +43,45 @@ const DEFAULTS = {
 
 const state = {
   settings: { ...DEFAULTS },
-  history: [],              // [{role:'user'|'assistant', text}]
-  stream: null,             // MediaStream de la pantalla
+  history: [],
+  stream: null,
   micOn: false,
   recognition: null,
   recognizing: false,
   resumeMicAfterTTS: false,
-  speakQueue: [],
-  speakingNow: false,
-  ttsBuffer: '',
   sending: false,
-  abort: null,              // AbortController de la petición en curso (modo api)
+  abort: null,
   ws: null,
   wsOpenPromise: null,
-  pendingAsk: null,         // {resolve, reject, onDelta} del ask en curso (modo bridge)
+  pendingAsk: null,
   autoSendTimer: null,
+  hasMessages: false,
+};
+
+// cola de voz
+const tts = {
+  textQueue: [],
+  running: false,
+  currentAudio: null,
+  nextAudioPromise: null,
+  buffer: '',
 };
 
 const video = $('preview');
 
-/* ---------------- utilidades de interfaz ---------------- */
+/* ---------------- interfaz base ---------------- */
 
 function setStatus(text, dotClass) {
-  $('statusBar').textContent = text;
+  $('statusText').textContent = text;
   $('statusDot').className = 'dot' + (dotClass ? ' ' + dotClass : '');
 }
 
+function ensureChatReady() {
+  if (!state.hasMessages) { $('emptyState').remove(); state.hasMessages = true; }
+}
+
 function addMsg(role, text) {
+  ensureChatReady();
   const el = document.createElement('div');
   el.className = 'msg ' + role;
   el.textContent = text;
@@ -73,9 +90,24 @@ function addMsg(role, text) {
   return el;
 }
 
-function scrollChat() {
-  const c = $('chat');
-  c.scrollTop = c.scrollHeight;
+function scrollChat() { const c = $('chat'); c.scrollTop = c.scrollHeight; }
+
+/* ---------------- tema ---------------- */
+
+function applyTheme() {
+  const t = state.settings.theme;
+  const root = document.documentElement;
+  if (t === 'auto') root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme', t);
+  const dark = t === 'dark' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+  $('btnTheme').innerHTML = icon(dark ? 'sun' : 'moon');
+}
+
+function toggleTheme() {
+  const order = { auto: 'light', light: 'dark', dark: 'auto' };
+  state.settings.theme = order[state.settings.theme] || 'dark';
+  applyTheme();
+  chrome.storage.local.set({ settings: state.settings });
 }
 
 /* ---------------- ajustes ---------------- */
@@ -83,35 +115,49 @@ function scrollChat() {
 async function loadSettings() {
   const stored = await chrome.storage.local.get('settings');
   state.settings = { ...DEFAULTS, ...(stored.settings || {}) };
-  $('setMode').value = state.settings.mode;
-  $('setApiKey').value = state.settings.apiKey;
-  $('setModel').value = state.settings.model;
-  $('setEffort').value = state.settings.effort;
-  $('setLanguage').value = state.settings.language;
-  $('setAutoSend').checked = state.settings.autoSend;
-  $('setSpeak').checked = state.settings.speakReplies;
-  $('setAttach').checked = state.settings.attachScreenshot;
-  $('setBridgeUrl').value = state.settings.bridgeUrl;
+  const s = state.settings;
+  $('setMode').value = s.mode;
+  $('setApiKey').value = s.apiKey;
+  $('setModel').value = s.model;
+  $('setEffort').value = s.effort;
+  $('setLanguage').value = s.language;
+  $('setTtsProvider').value = s.ttsProvider;
+  $('setElevenKey').value = s.elevenKey;
+  $('setElevenModel').value = s.elevenModel;
+  $('setAutoSend').checked = s.autoSend;
+  $('setSpeak').checked = s.speakReplies;
+  $('setAttach').checked = s.attachScreenshot;
+  $('setBridgeUrl').value = s.bridgeUrl;
+  if (s.elevenVoiceId) {
+    const o = document.createElement('option');
+    o.value = s.elevenVoiceId; o.textContent = s.elevenVoiceName || s.elevenVoiceId; o.selected = true;
+    $('setElevenVoice').appendChild(o);
+  }
+  applyTheme();
   toggleModeSections();
-  populateVoices();
+  toggleVoiceSections();
+  populateBrowserVoices();
 }
 
 function saveSettings() {
-  state.settings = {
-    ...state.settings,
-    mode: $('setMode').value,
-    apiKey: $('setApiKey').value.trim(),
-    model: $('setModel').value,
-    effort: $('setEffort').value,
-    language: $('setLanguage').value,
-    voiceName: $('setVoice').value,
-    autoSend: $('setAutoSend').checked,
-    speakReplies: $('setSpeak').checked,
-    attachScreenshot: $('setAttach').checked,
-    bridgeUrl: $('setBridgeUrl').value.trim() || DEFAULTS.bridgeUrl,
-  };
-  chrome.storage.local.set({ settings: state.settings });
-  if (state.recognition) state.recognition.lang = state.settings.language;
+  const s = state.settings;
+  s.mode = $('setMode').value;
+  s.apiKey = $('setApiKey').value.trim();
+  s.model = $('setModel').value;
+  s.effort = $('setEffort').value;
+  s.language = $('setLanguage').value;
+  s.ttsProvider = $('setTtsProvider').value;
+  s.voiceName = $('setVoice').value;
+  s.elevenKey = $('setElevenKey').value.trim();
+  s.elevenModel = $('setElevenModel').value;
+  s.elevenVoiceId = $('setElevenVoice').value;
+  s.elevenVoiceName = $('setElevenVoice').selectedOptions[0]?.textContent || '';
+  s.autoSend = $('setAutoSend').checked;
+  s.speakReplies = $('setSpeak').checked;
+  s.attachScreenshot = $('setAttach').checked;
+  s.bridgeUrl = $('setBridgeUrl').value.trim() || DEFAULTS.bridgeUrl;
+  chrome.storage.local.set({ settings: s });
+  if (state.recognition) state.recognition.lang = s.language;
 }
 
 function toggleModeSections() {
@@ -120,7 +166,13 @@ function toggleModeSections() {
   $('bridgeSettings').classList.toggle('hidden', api);
 }
 
-function populateVoices() {
+function toggleVoiceSections() {
+  const eleven = $('setTtsProvider').value === 'elevenlabs';
+  $('elevenVoice').classList.toggle('hidden', !eleven);
+  $('browserVoice').classList.toggle('hidden', eleven);
+}
+
+function populateBrowserVoices() {
   const sel = $('setVoice');
   const current = state.settings.voiceName;
   const voices = speechSynthesis.getVoices();
@@ -129,52 +181,79 @@ function populateVoices() {
   for (const v of voices) {
     if (!v.lang.toLowerCase().startsWith(prefix)) continue;
     const o = document.createElement('option');
-    o.value = v.name;
-    o.textContent = `${v.name} (${v.lang})`;
+    o.value = v.name; o.textContent = `${v.name} (${v.lang})`;
     if (v.name === current) o.selected = true;
     sel.appendChild(o);
   }
 }
-speechSynthesis.onvoiceschanged = populateVoices;
+speechSynthesis.onvoiceschanged = populateBrowserVoices;
+
+/* ---------------- ElevenLabs: cargar voces / probar ---------------- */
+
+async function loadElevenVoices() {
+  const key = $('setElevenKey').value.trim();
+  if (!key) { addMsg('error', 'Escribe primero tu clave de ElevenLabs.'); return; }
+  const btn = $('btnLoadVoices'); btn.disabled = true; btn.textContent = 'Cargando…';
+  try {
+    const res = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': key } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const sel = $('setElevenVoice');
+    const prev = state.settings.elevenVoiceId;
+    sel.innerHTML = '';
+    for (const v of data.voices || []) {
+      const o = document.createElement('option');
+      o.value = v.voice_id; o.textContent = v.name;
+      if (v.voice_id === prev) o.selected = true;
+      sel.appendChild(o);
+    }
+    if (!sel.options.length) sel.innerHTML = '<option value="">(sin voces en tu cuenta)</option>';
+    addMsg('system', `Cargadas ${data.voices?.length || 0} voces de ElevenLabs.`);
+  } catch (e) {
+    addMsg('error', 'No pude cargar las voces: ' + e.message + ' (¿clave correcta?)');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Cargar mis voces';
+  }
+}
+
+async function testVoice() {
+  saveSettings();
+  cancelSpeech();
+  enqueueSpeak('Hola, soy tu asistente. Así sonará mi voz.');
+}
 
 /* ---------------- captura de pantalla ---------------- */
 
 async function startShare() {
   try {
-    const stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: 5 },
-      audio: false,
-    });
+    const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 5 }, audio: false });
     state.stream = stream;
     video.srcObject = stream;
     await video.play();
     stream.getVideoTracks()[0].addEventListener('ended', stopShare);
     $('btnShare').classList.add('active');
     addMsg('system', 'Pantalla compartida. Enviaré una captura con cada pregunta.');
-    setStatus('Pantalla compartida. Te escucho cuando quieras.', state.micOn ? 'listening' : '');
+    setStatus(state.micOn ? 'Escuchando' : 'Listo', state.micOn ? 'listening' : '');
   } catch (e) {
     addMsg('error', 'No se pudo compartir la pantalla: ' + e.message);
   }
 }
 
 function stopShare() {
-  if (state.stream) {
-    for (const t of state.stream.getTracks()) t.stop();
-  }
+  if (state.stream) for (const t of state.stream.getTracks()) t.stop();
   state.stream = null;
   video.srcObject = null;
   $('btnShare').classList.remove('active');
   addMsg('system', 'Captura de pantalla detenida.');
 }
 
-// Devuelve el fotograma actual como JPEG base64 (sin prefijo data:)
 function captureFrame() {
   if (!state.stream) return null;
   const track = state.stream.getVideoTracks()[0];
   if (!track || track.readyState !== 'live') return null;
   const vw = video.videoWidth, vh = video.videoHeight;
   if (!vw || !vh) return null;
-  const MAX = 1568; // lado largo máximo: buen equilibrio calidad/coste
+  const MAX = 1568;
   const scale = Math.min(1, MAX / Math.max(vw, vh));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(vw * scale);
@@ -187,26 +266,20 @@ function captureFrame() {
 
 function initRecognition() {
   const SR = self.SpeechRecognition || self.webkitSpeechRecognition;
-  if (!SR) {
-    addMsg('error', 'Este navegador no soporta reconocimiento de voz (usa Chrome).');
-    return null;
-  }
+  if (!SR) { addMsg('error', 'Este navegador no soporta reconocimiento de voz (usa Chrome).'); return null; }
   const r = new SR();
   r.lang = state.settings.language;
   r.continuous = true;
   r.interimResults = true;
 
   r.onresult = (e) => {
-    let interim = '';
-    let finals = '';
+    let interim = '', finals = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const res = e.results[i];
-      if (res.isFinal) finals += res[0].transcript;
-      else interim += res[0].transcript;
+      if (res.isFinal) finals += res[0].transcript; else interim += res[0].transcript;
     }
     if (interim) {
-      // si el usuario empieza a hablar mientras Claude habla, lo callamos
-      if (state.speakingNow) cancelSpeech();
+      if (tts.running) cancelSpeech(); // barge-in: el usuario habla → callamos a Claude
       $('interim').textContent = '… ' + interim;
     }
     if (finals.trim()) {
@@ -217,20 +290,14 @@ function initRecognition() {
       if (state.settings.autoSend) scheduleAutoSend();
     }
   };
-
   r.onend = () => {
     state.recognizing = false;
-    // Chrome corta el reconocimiento tras silencios: lo relanzamos si el mic sigue activo
-    if (state.micOn && !state.speakingNow) {
-      setTimeout(() => { if (state.micOn && !state.recognizing) startRecognition(); }, 250);
-    }
+    if (state.micOn && !tts.running) setTimeout(() => { if (state.micOn && !state.recognizing) startRecognition(); }, 250);
   };
-
   r.onerror = (e) => {
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-      state.micOn = false;
-      updateMicUI();
-      addMsg('error', 'Permiso de micrófono denegado. Actívalo en el candado de la barra de direcciones o en la configuración del sitio.');
+      state.micOn = false; updateMicUI();
+      addMsg('error', 'Permiso de micrófono denegado. Actívalo en el candado de la barra de direcciones.');
     }
   };
   return r;
@@ -239,53 +306,42 @@ function initRecognition() {
 function startRecognition() {
   if (!state.recognition) state.recognition = initRecognition();
   if (!state.recognition || state.recognizing) return;
-  try {
-    state.recognition.lang = state.settings.language;
-    state.recognition.start();
-    state.recognizing = true;
-  } catch (_) { /* ya arrancado */ }
+  try { state.recognition.lang = state.settings.language; state.recognition.start(); state.recognizing = true; }
+  catch (_) {}
   updateMicUI();
 }
 
 function stopRecognition() {
-  if (state.recognition && state.recognizing) {
-    try { state.recognition.abort(); } catch (_) {}
-  }
+  if (state.recognition && state.recognizing) { try { state.recognition.abort(); } catch (_) {} }
   state.recognizing = false;
   updateMicUI();
 }
 
 function toggleMic() {
   state.micOn = !state.micOn;
-  if (state.micOn) {
-    startRecognition();
-    setStatus('Escuchando… habla cuando quieras.', 'listening');
-  } else {
-    stopRecognition();
-    $('interim').textContent = '';
-    setStatus('Micrófono apagado.');
-  }
+  if (state.micOn) { startRecognition(); setStatus('Escuchando', 'listening'); }
+  else { stopRecognition(); $('interim').textContent = ''; setStatus('Micrófono apagado'); }
   updateMicUI();
 }
 
 function updateMicUI() {
   $('btnMic').classList.toggle('active', state.micOn);
-  if (state.micOn && !state.sending && !state.speakingNow) $('statusDot').className = 'dot listening';
+  if (state.micOn && !state.sending && !tts.running) $('statusDot').className = 'dot listening';
 }
 
 function scheduleAutoSend() {
   clearTimeout(state.autoSendTimer);
   state.autoSendTimer = setTimeout(() => {
     const q = $('input').value.trim();
-    if (q && !state.sending) {
-      $('input').value = '';
-      autoGrowInput();
-      sendQuestion(q);
-    }
+    if (q && !state.sending) { $('input').value = ''; autoGrowInput(); sendQuestion(q); }
   }, 900);
 }
 
 /* ---------------- voz del asistente (TTS) ---------------- */
+
+function useEleven() {
+  return state.settings.ttsProvider === 'elevenlabs' && state.settings.elevenKey && state.settings.elevenVoiceId;
+}
 
 function cleanForSpeech(text) {
   return text
@@ -299,72 +355,116 @@ function cleanForSpeech(text) {
 
 function feedTTS(text) {
   if (!state.settings.speakReplies) return;
-  state.ttsBuffer += text;
-  // extrae frases completas para ir hablando durante el streaming
+  tts.buffer += text;
   let m;
-  while ((m = state.ttsBuffer.match(/^[\s\S]*?[.!?…\n]+(?=\s|$)/))) {
+  while ((m = tts.buffer.match(/^[\s\S]*?[.!?…\n]+(?=\s|$)/))) {
     const sentence = m[0];
-    state.ttsBuffer = state.ttsBuffer.slice(sentence.length);
+    tts.buffer = tts.buffer.slice(sentence.length);
     enqueueSpeak(sentence);
   }
 }
-
 function flushTTS() {
-  if (state.settings.speakReplies && state.ttsBuffer.trim()) enqueueSpeak(state.ttsBuffer);
-  state.ttsBuffer = '';
+  if (state.settings.speakReplies && tts.buffer.trim()) enqueueSpeak(tts.buffer);
+  tts.buffer = '';
 }
 
 function enqueueSpeak(text) {
   const clean = cleanForSpeech(text);
   if (!clean) return;
-  state.speakQueue.push(clean);
-  pumpSpeak();
+  tts.textQueue.push(clean);
+  ttsPump();
 }
 
-function pickVoice() {
-  const voices = speechSynthesis.getVoices();
-  if (state.settings.voiceName) {
-    const v = voices.find((v) => v.name === state.settings.voiceName);
-    if (v) return v;
-  }
-  return voices.find((v) => v.lang === state.settings.language)
-      || voices.find((v) => v.lang.startsWith(state.settings.language.slice(0, 2)))
-      || null;
+function pauseMicForTTS() {
+  if (state.recognizing) { state.resumeMicAfterTTS = true; stopRecognition(); }
 }
-
-function pumpSpeak() {
-  if (state.speakingNow || state.speakQueue.length === 0) return;
-  // pausamos el micrófono mientras habla para no transcribirse a sí mismo
-  if (state.recognizing) {
-    state.resumeMicAfterTTS = true;
-    stopRecognition();
-  }
-  const u = new SpeechSynthesisUtterance(state.speakQueue.shift());
-  u.lang = state.settings.language;
-  const v = pickVoice();
-  if (v) u.voice = v;
-  u.rate = 1.05;
-  state.speakingNow = true;
-  $('statusDot').className = 'dot speaking';
-  u.onend = u.onerror = () => {
-    state.speakingNow = false;
-    if (state.speakQueue.length) pumpSpeak();
-    else maybeResumeMic();
-  };
-  speechSynthesis.speak(u);
-}
-
 function maybeResumeMic() {
   if (!state.sending) $('statusDot').className = state.micOn ? 'dot listening' : 'dot';
   if (state.resumeMicAfterTTS && state.micOn) startRecognition();
   state.resumeMicAfterTTS = false;
 }
 
+async function ttsPump() {
+  if (tts.running) return;
+  tts.running = true;
+  pauseMicForTTS();
+  $('statusDot').className = 'dot speaking';
+  while (tts.textQueue.length) {
+    const text = tts.textQueue.shift();
+    if (useEleven()) {
+      const promise = tts.nextAudioPromise || elevenFetch(text);
+      tts.nextAudioPromise = null;
+      if (tts.textQueue.length) tts.nextAudioPromise = elevenFetch(tts.textQueue[0]).catch(() => null);
+      let url = null;
+      try { url = await promise; } catch (_) {}
+      if (url) { try { await playUrl(url); } catch (_) {} }
+      else { await browserSpeak(text); } // si ElevenLabs falla, usa el navegador
+    } else {
+      await browserSpeak(text);
+    }
+    if (!tts.running) break; // cancelado
+  }
+  tts.running = false;
+  maybeResumeMic();
+}
+
+async function elevenFetch(text) {
+  const s = state.settings;
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${s.elevenVoiceId}/stream?output_format=mp3_44100_128`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'xi-api-key': s.elevenKey, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      text,
+      model_id: s.elevenModel,
+      voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.0, use_speaker_boost: true },
+    }),
+  });
+  if (!res.ok) throw new Error('ElevenLabs HTTP ' + res.status);
+  const buf = await res.arrayBuffer();
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/mpeg' }));
+}
+
+function playUrl(url) {
+  return new Promise((resolve) => {
+    const a = new Audio(url);
+    tts.currentAudio = a;
+    const done = () => { URL.revokeObjectURL(url); if (tts.currentAudio === a) tts.currentAudio = null; resolve(); };
+    a.onended = done;
+    a.onerror = done;
+    a.play().catch(done);
+  });
+}
+
+function browserSpeak(text) {
+  return new Promise((resolve) => {
+    if (!('speechSynthesis' in window)) return resolve();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = state.settings.language;
+    const v = pickBrowserVoice();
+    if (v) u.voice = v;
+    u.rate = 1.05;
+    u.onend = u.onerror = () => resolve();
+    tts.currentAudio = { _utter: u };
+    speechSynthesis.speak(u);
+  });
+}
+
+function pickBrowserVoice() {
+  const voices = speechSynthesis.getVoices();
+  if (state.settings.voiceName) { const v = voices.find((v) => v.name === state.settings.voiceName); if (v) return v; }
+  return voices.find((v) => v.lang === state.settings.language)
+      || voices.find((v) => v.lang.startsWith(state.settings.language.slice(0, 2))) || null;
+}
+
 function cancelSpeech() {
-  state.speakQueue.length = 0;
-  state.ttsBuffer = '';
-  speechSynthesis.cancel();
-  state.speakingNow = false;
+  tts.textQueue.length = 0;
+  tts.buffer = '';
+  tts.nextAudioPromise = null;
+  tts.running = false;
+  if (tts.currentAudio && tts.currentAudio.pause) { try { tts.currentAudio.pause(); tts.currentAudio.src = ''; } catch (_) {} }
+  tts.currentAudio = null;
+  try { speechSynthesis.cancel(); } catch (_) {}
   maybeResumeMic();
 }
 
@@ -377,41 +477,33 @@ async function sendQuestion(text) {
   cancelSpeech();
 
   const shot = state.settings.attachScreenshot ? captureFrame() : null;
-  addMsg('user', text + (shot ? '  📸' : ''));
+  const userEl = addMsg('user', text);
+  if (shot) { const t = document.createElement('span'); t.className = 'tag'; t.textContent = '📸'; userEl.appendChild(t); }
   const assistantEl = addMsg('assistant', '…');
   let full = '';
   const onDelta = (t) => {
     if (assistantEl.textContent === '…') assistantEl.textContent = '';
-    full += t;
-    assistantEl.textContent += t;
-    feedTTS(t);
-    scrollChat();
+    full += t; assistantEl.textContent += t; feedTTS(t); scrollChat();
   };
 
-  setStatus('Pensando…', 'thinking');
+  setStatus('Pensando', 'thinking');
   try {
-    if (state.settings.mode === 'api') {
-      await askViaApi(text, shot, onDelta);
-    } else {
-      await askViaBridge(text, shot, onDelta);
-    }
+    if (state.settings.mode === 'api') await askViaApi(text, shot, onDelta);
+    else await askViaBridge(text, shot, onDelta);
     if (!full.trim()) assistantEl.textContent = '(sin respuesta)';
     state.history.push({ role: 'user', text });
     state.history.push({ role: 'assistant', text: full });
     if (state.history.length > 16) state.history.splice(0, state.history.length - 16);
   } catch (e) {
-    if (e.name === 'AbortError') {
-      addMsg('system', 'Respuesta detenida.');
-    } else {
-      addMsg('error', e.message || String(e));
-    }
+    if (e.name === 'AbortError') addMsg('system', 'Respuesta detenida.');
+    else addMsg('error', e.message || String(e));
     if (!full.trim()) assistantEl.remove();
   } finally {
     flushTTS();
     state.sending = false;
     state.abort = null;
     $('btnStop').classList.add('hidden');
-    setStatus(state.micOn ? 'Escuchando…' : 'Listo.', state.micOn ? 'listening' : '');
+    setStatus(state.micOn ? 'Escuchando' : 'Listo', state.micOn ? 'listening' : '');
   }
 }
 
@@ -419,21 +511,13 @@ async function sendQuestion(text) {
 
 async function askViaApi(text, shot, onDelta) {
   const s = state.settings;
-  if (!s.apiKey) throw new Error('Falta la clave de API. Ábrela en Ajustes ⚙️ (console.anthropic.com → API keys).');
+  if (!s.apiKey) throw new Error('Falta la clave de API. Ábrela en Ajustes (console.anthropic.com → API keys).');
 
   const content = [];
-  if (shot) {
-    content.push({
-      type: 'image',
-      source: { type: 'base64', media_type: 'image/jpeg', data: shot },
-    });
-  }
+  if (shot) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: shot } });
   content.push({ type: 'text', text });
 
-  const messages = state.history.map((m) => ({
-    role: m.role,
-    content: [{ type: 'text', text: m.text }],
-  }));
+  const messages = state.history.map((m) => ({ role: m.role, content: [{ type: 'text', text: m.text }] }));
   messages.push({ role: 'user', content });
 
   state.abort = new AbortController();
@@ -459,14 +543,10 @@ async function askViaApi(text, shot, onDelta) {
 
   if (!res.ok) {
     let detail = 'HTTP ' + res.status;
-    try {
-      const j = await res.json();
-      detail = j.error?.message || detail;
-    } catch (_) {}
+    try { const j = await res.json(); detail = j.error?.message || detail; } catch (_) {}
     throw new Error('Error de la API: ' + detail);
   }
 
-  // lector de eventos SSE
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buf = '';
@@ -482,15 +562,10 @@ async function askViaApi(text, shot, onDelta) {
         if (!line.startsWith('data:')) continue;
         const data = line.slice(5).trim();
         if (!data) continue;
-        let ev;
-        try { ev = JSON.parse(data); } catch (_) { continue; }
-        if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
-          onDelta(ev.delta.text);
-        } else if (ev.type === 'message_delta' && ev.delta?.stop_reason === 'refusal') {
-          onDelta(' No puedo ayudar con esa petición.');
-        } else if (ev.type === 'error') {
-          throw new Error('Error de la API: ' + (ev.error?.message || 'desconocido'));
-        }
+        let ev; try { ev = JSON.parse(data); } catch (_) { continue; }
+        if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') onDelta(ev.delta.text);
+        else if (ev.type === 'message_delta' && ev.delta?.stop_reason === 'refusal') onDelta(' No puedo ayudar con esa petición.');
+        else if (ev.type === 'error') throw new Error('Error de la API: ' + (ev.error?.message || 'desconocido'));
       }
     }
   }
@@ -501,73 +576,44 @@ async function askViaApi(text, shot, onDelta) {
 function connectBridge() {
   if (state.ws && state.ws.readyState === WebSocket.OPEN) return Promise.resolve();
   if (state.wsOpenPromise) return state.wsOpenPromise;
-
   state.wsOpenPromise = new Promise((resolve, reject) => {
     let settled = false;
     const ws = new WebSocket(state.settings.bridgeUrl);
     state.ws = ws;
-
     ws.onopen = () => { settled = true; resolve(); };
-    ws.onerror = () => {
-      if (!settled) {
-        settled = true;
-        reject(new Error('No se pudo conectar con el puente local (' + state.settings.bridgeUrl + '). ¿Has arrancado "node server.mjs" en tu ordenador?'));
-      }
-    };
+    ws.onerror = () => { if (!settled) { settled = true; reject(new Error('No se pudo conectar con el puente local (' + state.settings.bridgeUrl + '). ¿Arrancaste "node server.mjs"?')); } };
     ws.onclose = () => {
-      state.ws = null;
-      state.wsOpenPromise = null;
-      if (state.pendingAsk) {
-        state.pendingAsk.reject(new Error('Se cerró la conexión con el puente local.'));
-        state.pendingAsk = null;
-      }
+      state.ws = null; state.wsOpenPromise = null;
+      if (state.pendingAsk) { state.pendingAsk.reject(new Error('Se cerró la conexión con el puente local.')); state.pendingAsk = null; }
     };
     ws.onmessage = (e) => handleBridgeMessage(e.data);
   }).finally(() => { state.wsOpenPromise = null; });
-
   return state.wsOpenPromise;
 }
 
 function handleBridgeMessage(raw) {
-  let msg;
-  try { msg = JSON.parse(raw); } catch (_) { return; }
+  let msg; try { msg = JSON.parse(raw); } catch (_) { return; }
   const ask = state.pendingAsk;
   switch (msg.type) {
-    case 'text':
-      if (ask) ask.onDelta((ask.gotText ? '\n' : '') + msg.text), (ask.gotText = true);
-      break;
-    case 'status':
-      setStatus('Claude Code: ' + msg.text, 'thinking');
-      break;
-    case 'permission':
-      renderPermissionRequest(msg);
-      break;
-    case 'done':
-      if (ask) { ask.resolve(); state.pendingAsk = null; }
-      break;
-    case 'error':
-      if (ask) { ask.reject(new Error(msg.text)); state.pendingAsk = null; }
-      else addMsg('error', msg.text);
-      break;
+    case 'text': if (ask) { ask.onDelta((ask.gotText ? '\n' : '') + msg.text); ask.gotText = true; } break;
+    case 'status': setStatus('Claude Code: ' + msg.text, 'thinking'); break;
+    case 'permission': renderPermissionRequest(msg); break;
+    case 'done': if (ask) { ask.resolve(); state.pendingAsk = null; } break;
+    case 'error': if (ask) { ask.reject(new Error(msg.text)); state.pendingAsk = null; } else addMsg('error', msg.text); break;
   }
 }
 
 function renderPermissionRequest(msg) {
+  ensureChatReady();
   const el = document.createElement('div');
   el.className = 'msg system';
-  el.textContent = `Claude Code quiere usar la herramienta "${msg.tool}":\n${msg.input}`;
+  el.textContent = `Claude Code quiere usar "${msg.tool}":\n${msg.input}`;
   const actions = document.createElement('div');
   actions.className = 'perm-actions';
-  const allow = document.createElement('button');
-  allow.className = 'allow';
-  allow.textContent = 'Permitir';
-  const deny = document.createElement('button');
-  deny.className = 'deny';
-  deny.textContent = 'Denegar';
+  const allow = document.createElement('button'); allow.className = 'allow'; allow.textContent = 'Permitir';
+  const deny = document.createElement('button'); deny.className = 'deny'; deny.textContent = 'Denegar';
   const answer = (ok) => {
-    if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-      state.ws.send(JSON.stringify({ type: 'permission_response', id: msg.id, allow: ok }));
-    }
+    if (state.ws && state.ws.readyState === WebSocket.OPEN) state.ws.send(JSON.stringify({ type: 'permission_response', id: msg.id, allow: ok }));
     actions.remove();
     el.textContent += ok ? '\n✅ Permitido' : '\n⛔ Denegado';
   };
@@ -589,11 +635,8 @@ async function askViaBridge(text, shot, onDelta) {
 }
 
 function stopCurrent() {
-  if (state.settings.mode === 'api' && state.abort) {
-    state.abort.abort();
-  } else if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-    state.ws.send(JSON.stringify({ type: 'interrupt' }));
-  }
+  if (state.settings.mode === 'api' && state.abort) state.abort.abort();
+  else if (state.ws && state.ws.readyState === WebSocket.OPEN) state.ws.send(JSON.stringify({ type: 'interrupt' }));
   cancelSpeech();
 }
 
@@ -602,46 +645,50 @@ function stopCurrent() {
 function autoGrowInput() {
   const t = $('input');
   t.style.height = 'auto';
-  t.style.height = Math.min(t.scrollHeight, 110) + 'px';
+  t.style.height = Math.min(t.scrollHeight, 120) + 'px';
 }
 
 function bindUI() {
   $('btnShare').onclick = () => (state.stream ? stopShare() : startShare());
   $('btnMic').onclick = toggleMic;
-  $('btnStopVoice').onclick = cancelSpeech;
+  $('btnMute').onclick = cancelSpeech;
   $('btnStop').onclick = stopCurrent;
+  $('btnTheme').onclick = toggleTheme;
 
   $('btnSend').onclick = () => {
     const q = $('input').value.trim();
-    if (q) {
-      $('input').value = '';
-      autoGrowInput();
-      sendQuestion(q);
-    }
+    if (q) { $('input').value = ''; autoGrowInput(); sendQuestion(q); }
   };
   $('input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      $('btnSend').click();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('btnSend').click(); }
   });
   $('input').addEventListener('input', autoGrowInput);
 
-  $('btnSettings').onclick = () => $('settings').classList.toggle('hidden');
+  // chips del estado vacío
+  document.querySelectorAll('.chip').forEach((c) => {
+    c.onclick = () => sendQuestion(c.dataset.q);
+  });
+
+  $('btnSettings').onclick = () => $('settings').classList.remove('hidden');
+  $('btnCloseX').onclick = () => $('settings').classList.add('hidden');
   $('btnCloseSettings').onclick = () => {
     saveSettings();
     $('settings').classList.add('hidden');
-    addMsg('system', 'Ajustes guardados (modo: ' + (state.settings.mode === 'api' ? 'API directa' : 'puente Claude Code') + ').');
+    addMsg('system', 'Ajustes guardados.');
   };
   $('setMode').onchange = toggleModeSections;
-  $('setLanguage').onchange = populateVoices;
-  for (const id of ['setApiKey', 'setModel', 'setEffort', 'setLanguage', 'setVoice', 'setAutoSend', 'setSpeak', 'setAttach', 'setBridgeUrl', 'setMode']) {
+  $('setTtsProvider').onchange = toggleVoiceSections;
+  $('setLanguage').onchange = populateBrowserVoices;
+  $('btnLoadVoices').onclick = loadElevenVoices;
+  $('btnTestVoice').onclick = testVoice;
+
+  for (const id of ['setApiKey','setModel','setEffort','setLanguage','setVoice','setAutoSend','setSpeak','setAttach','setBridgeUrl','setMode','setTtsProvider','setElevenKey','setElevenModel','setElevenVoice']) {
     $(id).addEventListener('change', saveSettings);
   }
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.settings.theme === 'auto') applyTheme(); });
 }
 
 (async function init() {
   bindUI();
   await loadSettings();
-  addMsg('system', 'Hola 👋 Comparte tu pantalla, activa el micrófono y pregúntame lo que quieras. Configura el modo de conexión en ⚙️.');
 })();
