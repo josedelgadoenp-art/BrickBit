@@ -78,6 +78,18 @@ node server.mjs /ruta/de/tu/proyecto
 
 Cuando Claude Code quiera usar una herramienta con efectos (Bash, editar archivos…), el panel te mostrará **Permitir / Denegar**. Las herramientas de solo lectura (Read, Grep, Glob…) pasan sin preguntar. Las capturas de pantalla se guardan como archivo temporal y Claude Code las abre con su herramienta `Read`.
 
+### Modo C — Servidor de la empresa (recomendado para equipos)
+
+El modo pensado para desplegar a un equipo (p. ej. GNP): la clave del proveedor vive **una sola vez en un servidor**, no una por persona. Cada empleado solo pone la **dirección del servidor** y su **código de acceso**.
+
+```bash
+cd asistente-claude/backend
+cp .env.example .env      # pon ANTHROPIC_API_KEY y los usuarios
+node server.mjs           # Node 18+, sin dependencias
+```
+
+Luego, en el panel → Ajustes → **Modo: Servidor de la empresa** → dirección + código. Ventajas: una clave central, control de gasto, límite por usuario y registro de uso (solo metadatos). Guía completa y lista de producción (HTTPS, SSO corporativo): [`backend/README.md`](backend/README.md).
+
 ## 3. Uso
 
 1. **🖥️ Compartir** → elige pantalla completa, ventana o pestaña.

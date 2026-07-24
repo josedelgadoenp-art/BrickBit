@@ -88,10 +88,22 @@
         <label class="field">
           <span>Modo</span>
           <select id="setMode">
+            <option value="backend">Servidor de la empresa (recomendado para equipos)</option>
             <option value="api">API de Claude (directo, necesita clave)</option>
             <option value="bridge">Claude Code (puente local — continúa tu sesión)</option>
           </select>
         </label>
+        <div id="backendSettings" class="hidden">
+          <label class="field">
+            <span>Dirección del servidor</span>
+            <input id="setBackendUrl" type="text" placeholder="https://asistente.tu-empresa.com" />
+          </label>
+          <label class="field">
+            <span>Código de acceso</span>
+            <input id="setAccessCode" type="password" placeholder="tu código personal" autocomplete="off" />
+          </label>
+          <p class="hint">La clave del proveedor vive en el servidor, no aquí. El administrador te da la dirección y tu código.</p>
+        </div>
         <div id="apiSettings">
           <label class="field">
             <span>Clave de API de Anthropic</span>

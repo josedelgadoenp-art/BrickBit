@@ -59,6 +59,8 @@ const DEFAULTS = {
   attachScreenshot: true,
   maxTokens: 1024,
   bridgeUrl: 'ws://127.0.0.1:8787',
+  backendUrl: '',
+  accessCode: '',
 };
 
 const state = {
@@ -148,6 +150,8 @@ async function loadSettings() {
   $('setSpeak').checked = s.speakReplies;
   $('setAttach').checked = s.attachScreenshot;
   $('setBridgeUrl').value = s.bridgeUrl;
+  $('setBackendUrl').value = s.backendUrl;
+  $('setAccessCode').value = s.accessCode;
   if (s.elevenVoiceId) {
     const o = document.createElement('option');
     o.value = s.elevenVoiceId; o.textContent = s.elevenVoiceName || s.elevenVoiceId; o.selected = true;
@@ -176,14 +180,17 @@ function saveSettings() {
   s.speakReplies = $('setSpeak').checked;
   s.attachScreenshot = $('setAttach').checked;
   s.bridgeUrl = $('setBridgeUrl').value.trim() || DEFAULTS.bridgeUrl;
+  s.backendUrl = $('setBackendUrl').value.trim().replace(/\/$/, '');
+  s.accessCode = $('setAccessCode').value.trim();
   chrome.storage.local.set({ settings: s });
   if (state.recognition) state.recognition.lang = s.language;
 }
 
 function toggleModeSections() {
-  const api = $('setMode').value === 'api';
-  $('apiSettings').classList.toggle('hidden', !api);
-  $('bridgeSettings').classList.toggle('hidden', api);
+  const mode = $('setMode').value;
+  $('apiSettings').classList.toggle('hidden', mode !== 'api');
+  $('bridgeSettings').classList.toggle('hidden', mode !== 'bridge');
+  $('backendSettings').classList.toggle('hidden', mode !== 'backend');
 }
 
 function toggleVoiceSections() {
@@ -211,11 +218,21 @@ speechSynthesis.onvoiceschanged = populateBrowserVoices;
 /* ---------------- ElevenLabs: cargar voces / probar ---------------- */
 
 async function loadElevenVoices() {
-  const key = $('setElevenKey').value.trim();
-  if (!key) { addMsg('error', 'Escribe primero tu clave de ElevenLabs.'); return; }
+  const backend = $('setMode').value === 'backend';
+  let url, headers;
+  if (backend) {
+    const bu = $('setBackendUrl').value.trim().replace(/\/$/, '');
+    const code = $('setAccessCode').value.trim();
+    if (!bu || !code) { addMsg('error', 'Configura primero la dirección del servidor y tu código de acceso.'); return; }
+    url = bu + '/v1/voices'; headers = { authorization: 'Bearer ' + code };
+  } else {
+    const key = $('setElevenKey').value.trim();
+    if (!key) { addMsg('error', 'Escribe primero tu clave de ElevenLabs.'); return; }
+    url = 'https://api.elevenlabs.io/v1/voices'; headers = { 'xi-api-key': key };
+  }
   const btn = $('btnLoadVoices'); btn.disabled = true; btn.textContent = 'Cargando…';
   try {
-    const res = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': key } });
+    const res = await fetch(url, { headers });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     const sel = $('setElevenVoice');
@@ -360,7 +377,11 @@ function scheduleAutoSend() {
 /* ---------------- voz del asistente (TTS) ---------------- */
 
 function useEleven() {
-  return state.settings.ttsProvider === 'elevenlabs' && state.settings.elevenKey && state.settings.elevenVoiceId;
+  const s = state.settings;
+  if (s.ttsProvider !== 'elevenlabs') return false;
+  // En modo servidor, la clave y la voz viven en el backend.
+  if (s.mode === 'backend') return !!s.backendUrl && !!s.accessCode;
+  return !!s.elevenKey && !!s.elevenVoiceId;
 }
 
 function cleanForSpeech(text) {
@@ -430,17 +451,26 @@ async function ttsPump() {
 
 async function elevenFetch(text) {
   const s = state.settings;
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${s.elevenVoiceId}/stream?output_format=mp3_44100_128`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'xi-api-key': s.elevenKey, 'content-type': 'application/json' },
-    body: JSON.stringify({
-      text,
-      model_id: s.elevenModel,
-      voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.0, use_speaker_boost: true },
-    }),
-  });
-  if (!res.ok) throw new Error('ElevenLabs HTTP ' + res.status);
+  let res;
+  if (s.mode === 'backend') {
+    // La clave de ElevenLabs vive en el servidor; solo enviamos el texto.
+    res = await fetch(s.backendUrl + '/v1/tts', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + s.accessCode },
+      body: JSON.stringify({ text, voiceId: s.elevenVoiceId || undefined }),
+    });
+  } else {
+    res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${s.elevenVoiceId}/stream?output_format=mp3_44100_128`, {
+      method: 'POST',
+      headers: { 'xi-api-key': s.elevenKey, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        model_id: s.elevenModel,
+        voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.0, use_speaker_boost: true },
+      }),
+    });
+  }
+  if (!res.ok) throw new Error('TTS HTTP ' + res.status);
   const buf = await res.arrayBuffer();
   return URL.createObjectURL(new Blob([buf], { type: 'audio/mpeg' }));
 }
@@ -508,7 +538,8 @@ async function sendQuestion(text) {
 
   setStatus('Pensando', 'thinking');
   try {
-    if (state.settings.mode === 'api') await askViaApi(text, shot, onDelta);
+    if (state.settings.mode === 'backend') await askViaBackend(text, shot, onDelta);
+    else if (state.settings.mode === 'api') await askViaApi(text, shot, onDelta);
     else await askViaBridge(text, shot, onDelta);
     if (!full.trim()) assistantEl.textContent = '(sin respuesta)';
     state.history.push({ role: 'user', text });
@@ -527,46 +558,19 @@ async function sendQuestion(text) {
   }
 }
 
-/* ---------------- modo API directa ---------------- */
+/* ---------------- construcción de mensajes y streaming ---------------- */
 
-async function askViaApi(text, shot, onDelta) {
-  const s = state.settings;
-  if (!s.apiKey) throw new Error('Falta la clave de API. Ábrela en Ajustes (console.anthropic.com → API keys).');
-
+function buildMessages(text, shot) {
   const content = [];
   if (shot) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: shot } });
   content.push({ type: 'text', text });
-
   const messages = state.history.map((m) => ({ role: m.role, content: [{ type: 'text', text: m.text }] }));
   messages.push({ role: 'user', content });
+  return messages;
+}
 
-  state.abort = new AbortController();
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    signal: state.abort.signal,
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': s.apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: s.model,
-      max_tokens: s.maxTokens,
-      system: SYSTEM_PROMPT,
-      thinking: { type: 'adaptive' },
-      output_config: { effort: s.effort },
-      stream: true,
-      messages,
-    }),
-  });
-
-  if (!res.ok) {
-    let detail = 'HTTP ' + res.status;
-    try { const j = await res.json(); detail = j.error?.message || detail; } catch (_) {}
-    throw new Error('Error de la API: ' + detail);
-  }
-
+// Lee el streaming SSE (formato de Anthropic) tanto de la API directa como del backend.
+async function pumpSSE(res, onDelta) {
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buf = '';
@@ -585,10 +589,72 @@ async function askViaApi(text, shot, onDelta) {
         let ev; try { ev = JSON.parse(data); } catch (_) { continue; }
         if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') onDelta(ev.delta.text);
         else if (ev.type === 'message_delta' && ev.delta?.stop_reason === 'refusal') onDelta(' No puedo ayudar con esa petición.');
-        else if (ev.type === 'error') throw new Error('Error de la API: ' + (ev.error?.message || 'desconocido'));
+        else if (ev.type === 'error') throw new Error('Error: ' + (ev.error?.message || 'desconocido'));
       }
     }
   }
+}
+
+async function errorFrom(res, prefix) {
+  let detail = 'HTTP ' + res.status;
+  try { const j = await res.json(); detail = j.error?.message || j.error || detail; } catch (_) {}
+  return new Error(prefix + ': ' + detail);
+}
+
+/* ---------------- modo API directa ---------------- */
+
+async function askViaApi(text, shot, onDelta) {
+  const s = state.settings;
+  if (!s.apiKey) throw new Error('Falta la clave de API. Ábrela en Ajustes (console.anthropic.com → API keys).');
+
+  state.abort = new AbortController();
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    signal: state.abort.signal,
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': s.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: s.model,
+      max_tokens: s.maxTokens,
+      system: SYSTEM_PROMPT,
+      thinking: { type: 'adaptive' },
+      output_config: { effort: s.effort },
+      stream: true,
+      messages: buildMessages(text, shot),
+    }),
+  });
+  if (!res.ok) throw await errorFrom(res, 'Error de la API');
+  await pumpSSE(res, onDelta);
+}
+
+/* ---------------- modo servidor de la empresa (backend) ---------------- */
+
+async function askViaBackend(text, shot, onDelta) {
+  const s = state.settings;
+  if (!s.backendUrl) throw new Error('Falta la dirección del servidor. Ábrela en Ajustes.');
+  if (!s.accessCode) throw new Error('Falta tu código de acceso. Ábrelo en Ajustes.');
+
+  state.abort = new AbortController();
+  let res;
+  try {
+    res = await fetch(s.backendUrl + '/v1/chat', {
+      method: 'POST',
+      signal: state.abort.signal,
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + s.accessCode },
+      body: JSON.stringify({ messages: buildMessages(text, shot), effort: s.effort }),
+    });
+  } catch (e) {
+    if (e.name === 'AbortError') throw e;
+    throw new Error('No se pudo contactar con el servidor de la empresa (' + s.backendUrl + ').');
+  }
+  if (res.status === 401) throw new Error('Código de acceso no válido. Revísalo en Ajustes.');
+  if (res.status === 429) throw new Error('Demasiadas peticiones. Espera un momento e inténtalo de nuevo.');
+  if (!res.ok) throw await errorFrom(res, 'Error del servidor');
+  await pumpSSE(res, onDelta);
 }
 
 /* ---------------- modo puente Claude Code ---------------- */
@@ -702,7 +768,7 @@ function bindUI() {
   $('btnLoadVoices').onclick = loadElevenVoices;
   $('btnTestVoice').onclick = testVoice;
 
-  for (const id of ['setApiKey','setModel','setEffort','setLanguage','setVoice','setAutoSend','setSpeak','setAttach','setBridgeUrl','setMode','setTtsProvider','setElevenKey','setElevenModel','setElevenVoice']) {
+  for (const id of ['setApiKey','setModel','setEffort','setLanguage','setVoice','setAutoSend','setSpeak','setAttach','setBridgeUrl','setBackendUrl','setAccessCode','setMode','setTtsProvider','setElevenKey','setElevenModel','setElevenVoice']) {
     $(id).addEventListener('change', saveSettings);
   }
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.settings.theme === 'auto') applyTheme(); });
