@@ -50,6 +50,21 @@ Luego, en la extensión → Ajustes → **Modo: Servidor de la empresa**, pon la
 | `LOG_FILE` | (consola) | Ruta del registro de uso (JSONL). |
 | `SYSTEM_PROMPT` | (incluido) | Instrucciones del asistente. |
 
+## Base de conocimiento — que el asistente "sepa" de GNP
+
+El asistente puede responder con información de GNP en lugar de solo con conocimiento general. Funciona así (técnicamente, RAG):
+
+1. Pones documentos `.txt` o `.md` en la carpeta **`knowledge/`** (folletos, guías de proceso, preguntas frecuentes…).
+2. Al arrancar, el servidor los indexa (dice cuántos documentos y fragmentos cargó).
+3. En cada pregunta, busca los fragmentos más relevantes y se los pasa al modelo, con la instrucción de responder **solo con esa información** y avisar si algo no está.
+
+No necesita otro proveedor ni otra clave: la búsqueda (BM25) va incluida. Para añadir o actualizar contenido, edita la carpeta y **reinicia** el servidor. Detalle en `knowledge/LEEME-primero.md`.
+
+- **Documentos de ejemplo:** la carpeta trae `ejemplo-*.md` con conceptos **genéricos** de seguros (no datos de GNP) solo para que veas el mecanismo. Reemplázalos por el material oficial.
+- **PDF/Word:** conviértelos a texto (*Guardar como → Texto*) o pega el contenido en un `.txt`.
+- **Escala:** BM25 es suficiente para un piloto y demos. Para un corpus muy grande en producción, se puede migrar la recuperación a **embeddings vectoriales** (p. ej. Voyage AI) sin cambiar el resto.
+- **De dónde sacar el contenido:** lo correcto es que **GNP entregue sus documentos oficiales** (más completos, correctos y actualizados que la web pública, y sin problemas de derechos). El portal público bloquea la extracción automática, así que no se rastrea el sitio.
+
 ## Privacidad (importante para GNP)
 
 - El registro de uso guarda **solo metadatos**: usuario, ruta, tokens, ok/error y hora. **Nunca** el texto de los mensajes ni las capturas de pantalla.

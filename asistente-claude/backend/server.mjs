@@ -24,6 +24,7 @@ import http from 'node:http';
 import https from 'node:https';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import { buildIndex, retrieve, contextBlock } from './rag.mjs';
 
 /* ---------------- configuración ---------------- */
 
@@ -43,6 +44,8 @@ const CFG = {
   ratePerMin: Number(process.env.RATE_PER_MIN || 20),
   maxBodyBytes: Number(process.env.MAX_BODY_BYTES || 12 * 1024 * 1024),
   logFile: process.env.LOG_FILE || '',
+  knowledgeDir: process.env.KNOWLEDGE_DIR || './knowledge',
+  ragTopK: Number(process.env.RAG_TOP_K || 4),
   extraOrigins: (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
   system: process.env.SYSTEM_PROMPT || `Eres un asistente de voz que ayuda a un asesor mientras usa su ordenador.
 Recibes sus preguntas transcritas por voz y, normalmente, una captura de su pantalla.
@@ -53,6 +56,8 @@ Si te preguntan por algo visible en la captura, básate en ella; si no se distin
 const USERS = loadUsers(); // Map<sha256(token) -> {name}>
 if (!USERS.size) console.warn('[backend] AVISO: no hay usuarios configurados (USERS o USERS_FILE). Nadie podrá autenticarse.');
 if (!CFG.anthropicKey) console.warn('[backend] AVISO: falta ANTHROPIC_API_KEY. /v1/chat devolverá error hasta configurarla.');
+
+let KB = buildIndex(CFG.knowledgeDir); // base de conocimiento (RAG)
 
 const rate = new Map(); // name -> number[] (timestamps ms)
 
@@ -82,6 +87,7 @@ server.listen(CFG.port, () => {
   console.log(`[backend] escuchando en http://0.0.0.0:${CFG.port}`);
   console.log(`[backend] modelo: ${CFG.model} · proveedor: ${CFG.anthropicBase}`);
   console.log(`[backend] usuarios: ${USERS.size} · límite: ${CFG.ratePerMin}/min · voz: ${CFG.elevenKey ? 'ElevenLabs' : 'no configurada'}`);
+  console.log(`[backend] conocimiento: ${KB.files} documento(s), ${KB.chunks.length} fragmento(s) en ${CFG.knowledgeDir}`);
   console.log('[backend] recuerda: en producción debe ir tras HTTPS (proxy TLS).');
 });
 
@@ -100,10 +106,21 @@ async function handleChat(req, res) {
   if (!Array.isArray(body.messages) || !body.messages.length) return json(res, 400, { error: 'faltan mensajes' });
   const effort = ['low', 'medium', 'high'].includes(body.effort) ? body.effort : 'low';
 
+  // Base de conocimiento: busca fragmentos relevantes a la última pregunta.
+  const hits = retrieve(KB, lastUserText(body.messages), CFG.ragTopK);
+  let system = CFG.system;
+  if (hits.length) {
+    system += `\n\n=== CONOCIMIENTO OFICIAL DE GNP ===
+Para preguntas sobre GNP (productos, coberturas, procesos, requisitos), responde USANDO ÚNICAMENTE la información de abajo. Si la respuesta no está aquí, dilo con claridad y no la inventes. Si citar el documento ayuda, menciónalo entre corchetes.
+
+${contextBlock(hits)}
+=== FIN DEL CONOCIMIENTO ===`;
+  }
+
   const upstreamBody = JSON.stringify({
     model: CFG.model,
     max_tokens: CFG.maxTokens,
-    system: CFG.system,
+    system,
     thinking: { type: 'adaptive' },
     output_config: { effort },
     stream: true,
@@ -136,7 +153,7 @@ async function handleChat(req, res) {
     });
     ures.on('end', () => {
       res.end();
-      logUse({ user: user.name, route: 'chat', model: CFG.model, ok: true, input_tokens: usage.in, output_tokens: usage.out });
+      logUse({ user: user.name, route: 'chat', model: CFG.model, ok: true, input_tokens: usage.in, output_tokens: usage.out, kb: hits.length });
     });
   });
 
@@ -253,6 +270,16 @@ async function readJson(req, res) {
   if (raw === undefined) return undefined; // ya respondido
   try { return JSON.parse(raw.toString('utf8') || '{}'); }
   catch (_) { json(res, 400, { error: 'JSON no válido' }); return undefined; }
+}
+
+function lastUserText(messages) {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role !== 'user') continue;
+    if (typeof m.content === 'string') return m.content;
+    if (Array.isArray(m.content)) { const t = m.content.find((b) => b.type === 'text'); return t ? t.text : ''; }
+  }
+  return '';
 }
 
 function parseUsage(eventText, usage) {

@@ -90,6 +90,8 @@ node server.mjs           # Node 18+, sin dependencias
 
 Luego, en el panel → Ajustes → **Modo: Servidor de la empresa** → dirección + código. Ventajas: una clave central, control de gasto, límite por usuario y registro de uso (solo metadatos). Guía completa y lista de producción (HTTPS, SSO corporativo): [`backend/README.md`](backend/README.md).
 
+**Base de conocimiento:** puedes hacer que el asistente responda con información de tu organización dejando documentos `.txt`/`.md` en `backend/knowledge/` (busca los fragmentos relevantes y responde con ellos). Detalles en `backend/knowledge/LEEME-primero.md`.
+
 ## 3. Uso
 
 1. **🖥️ Compartir** → elige pantalla completa, ventana o pestaña.
