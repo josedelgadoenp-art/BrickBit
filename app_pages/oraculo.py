@@ -4,6 +4,7 @@ import streamlit as st
 
 from app_pages._common import datos_scoreados, invalidar_datos, COLORES_PRIORIDAD
 from brickbit import config, db
+from brickbit.connectors import CONECTORES
 
 st.title("🔮 El Oráculo · Señales de intención")
 st.caption(
@@ -85,14 +86,43 @@ with col_b:
         )
 
 st.divider()
-st.subheader("🔌 Conectores de ingesta (roadmap de producción)")
+st.subheader("🔌 Conectores de ingesta")
+
+for clave, info in CONECTORES.items():
+    with st.container(border=True):
+        izq, der = st.columns([3, 1])
+        izq.markdown(f"**{info['label']}**  \n<small>{info['descripcion']}</small>",
+                     unsafe_allow_html=True)
+        modulo = info["modulo"]
+        configurado = bool(getattr(modulo, "RESOURCE_ID", ""))
+        der.markdown("🟢 API configurada" if configurado else "🟡 Modo muestra local")
+
+        if der.button("▶️ Ejecutar ingesta", key=f"run_{clave}", type="primary"):
+            with st.spinner(f"Ingiriendo desde {info['label']}…"):
+                resultado = modulo.ingestar(conn)
+            if resultado.ok:
+                st.success(resultado.resumen())
+                for aviso in resultado.avisos:
+                    st.warning(aviso)
+                invalidar_datos()
+            else:
+                st.error(resultado.resumen())
+
+        if not configurado:
+            st.caption(
+                "Para leer del portal real, exporta `BRICKBIT_PERMISOS_RESOURCE_ID` con el id "
+                "del recurso vigente (descúbrelo con `permisos_cdmx.buscar_recursos()`). "
+                "Sin esa variable el conector corre con la muestra local incluida."
+            )
+
 st.markdown("""
+##### Roadmap de fuentes
 | Conector | Fuente | Señales que alimenta | Estado |
 |---|---|---|---|
 | Radar BrickBit | Registros y uso de la herramienta gratuita | `visita_repetida_radar`, `cotizo_en_linea` | ✅ Activo (esta app) |
-| Bolsas de empleo | Vacantes públicas por empresa | `pyme_contratando`, `empresa_expansion` | 🔧 Conector stub |
-| Datos abiertos CDMX | Manifestaciones de construcción | `permiso_construccion` | 🔧 Conector stub |
-| Portales inmobiliarios | Listados, precios, tiempo en mercado | anomalías de precio, `busqueda_activa_zona` | 🔧 Conector stub |
+| Permisos de construcción CDMX | Datos abiertos (CKAN) | `permiso_construccion` | ✅ Implementado |
+| Bolsas de empleo | Vacantes públicas por empresa | `pyme_contratando`, `empresa_expansion` | 🔧 Siguiente |
+| Portales inmobiliarios | Listados, precios, tiempo en mercado | anomalías de precio, `busqueda_activa_zona` | 🔧 Siguiente |
 | Registro público / notarías | Operaciones de compraventa | `compra_casa`, `inversionista_activo` | 🔜 Evaluar acceso |
 | LinkedIn / prensa | Cambios de puesto, rondas de inversión | `nuevo_empleo_ejecutivo`, `evento_liquidez` | 🔜 Evaluar acceso |
 

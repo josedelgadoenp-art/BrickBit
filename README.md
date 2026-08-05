@@ -106,7 +106,62 @@ brickbit/
   scoring.py              # fit x intención con decaimiento de recencia
   outreach.py             # plantillas + refinado con la API de Claude
   demo_data.py            # dataset sintético determinista (semilla fija)
+  connectors/
+    base.py               # normalización, geolocalización, HTTP con reintentos
+    permisos_cdmx.py      # conector de manifestaciones de construcción
+    __main__.py           # CLI para cron
+tests/                    # pruebas del conector (12, corren sin red)
+data/fixtures/            # muestras sintéticas para desarrollo offline
 data/brickbit.db          # se crea sola al arrancar (gitignored)
+```
+
+---
+
+## Conector de permisos de construcción (CDMX)
+
+**Por qué esta fuente primero:** un folio de manifestación de construcción es la señal de intención más limpia que existe en inmobiliario. Quien registra una obra ya pasó por notario, ya tiene el terreno y ya tiene presupuesto. No es un "interesado": es un desarrollador con proyecto activo que además necesita seguro de obra — o sea, entra por las dos verticales. Y es dato público y gratuito, así que el costo de adquisición es cero.
+
+```bash
+python -m brickbit.connectors --listar             # conectores disponibles
+python -m brickbit.connectors permisos_cdmx        # ejecutar ingesta
+python -m brickbit.connectors --buscar "manifestacion construccion"   # descubrir resource_id
+```
+
+También se ejecuta desde el botón "▶️ Ejecutar ingesta" en la página del Oráculo.
+
+### Conectarlo al portal real
+
+El portal de datos abiertos de CDMX corre CKAN, cuya API es estándar. El `resource_id` cambia cada vez que la dependencia republica el dataset, así que no se hardcodea:
+
+```bash
+export BRICKBIT_CKAN_BASE="https://datos.cdmx.gob.mx/api/3/action"
+export BRICKBIT_PERMISOS_RESOURCE_ID="<id del recurso vigente>"
+```
+
+Sin esa variable, el conector corre en **modo muestra local** con el fixture incluido, así que la app funciona y las pruebas pasan sin depender de que el portal esté arriba. `--buscar` consulta el catálogo para encontrar el id vigente.
+
+En cron, para que los leads estén listos antes de que abra la fuerza de ventas:
+
+```
+0 7 * * *  cd /ruta/BrickBit && python -m brickbit.connectors permisos_cdmx >> logs/ingesta.log 2>&1
+```
+
+### Qué resuelve por dentro
+
+| Problema real | Cómo se resuelve |
+|---|---|
+| El dataset republica con otros encabezados (`folio` / `num_folio` / `FOLIO`) | Mapa de alias por campo en vez de acoplarse a una versión del CSV |
+| El mismo desarrollador escrito de tres formas distintas | Clave normalizada que colapsa acentos, puntuación y sufijos de razón social (`S.A. de C.V.`) |
+| Correr el conector dos veces inflaría el score de intención | Índices únicos `(origen, origen_id)`: reingerir el mismo folio no crea otra señal |
+| El vendedor ya avanzó un lead y la reingesta lo pisaría | El upsert nunca toca la `etapa`, y el `fit_score` solo sube |
+| Un permiso en Milpa Alta caería en Polanco por ser "el menos lejano" | Radio máximo de 4 km; fuera de cobertura se descarta en vez de inventar la zona |
+| Fechas en cuatro formatos distintos | Parser tolerante que prueba los formatos comunes |
+| El portal se cae a media ingesta | Reintentos con backoff, y degradación al fixture con aviso en vez de excepción |
+
+El **fit se calcula desde la magnitud de la obra** (superficie, viviendas, niveles y tipo de manifestación: A unifamiliar < B plurifamiliar < C gran magnitud). Una torre de 210 viviendas y un particular que amplía su casa no valen lo mismo, y el ranking lo refleja: sobre la muestra incluida, el desarrollador con dos obras grandes sale prioridad A y el particular cae a C.
+
+```bash
+python tests/test_conector_permisos.py     # 12 pruebas, sin red
 ```
 
 **Todos los datos de la demo son sintéticos** (nombres, empresas y contactos ficticios, semilla fija). En producción, `demo_data.py` se sustituye por los conectores de ingesta listados en la página del Oráculo.

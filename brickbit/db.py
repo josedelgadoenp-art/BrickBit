@@ -1,4 +1,9 @@
-"""Persistencia SQLite: leads, señales, capturas de la herramienta gratuita y reuniones."""
+"""Persistencia SQLite: leads, señales, capturas de la herramienta gratuita y reuniones.
+
+Las columnas `origen`/`origen_ref` (leads) y `origen`/`origen_id` (señales) son la
+base de la idempotencia de los conectores: sus índices únicos hacen que reingerir
+la misma fuente no duplique nada.
+"""
 
 import sqlite3
 from pathlib import Path
@@ -20,6 +25,8 @@ CREATE TABLE IF NOT EXISTS leads (
     etapa TEXT NOT NULL DEFAULT 'nuevo',
     fuente TEXT,
     notas TEXT,
+    origen TEXT,
+    origen_ref TEXT,
     creado TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -28,6 +35,8 @@ CREATE TABLE IF NOT EXISTS senales (
     lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
     tipo TEXT NOT NULL,
     detalle TEXT,
+    origen TEXT,
+    origen_id TEXT,
     fecha TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -51,7 +60,30 @@ CREATE TABLE IF NOT EXISTS reuniones (
 
 CREATE INDEX IF NOT EXISTS idx_senales_lead ON senales(lead_id);
 CREATE INDEX IF NOT EXISTS idx_leads_etapa ON leads(etapa);
+
+-- Idempotencia de conectores. SQLite trata los NULL como distintos entre sí, así
+-- que los índices solo restringen filas que sí traen procedencia; los leads y
+-- señales capturados a mano no se ven afectados.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_origen
+    ON leads(origen, origen_ref) WHERE origen IS NOT NULL AND origen_ref IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_senales_origen
+    ON senales(origen, origen_id) WHERE origen IS NOT NULL AND origen_id IS NOT NULL;
 """
+
+# Columnas añadidas después de la v0.1: las bases ya creadas se migran al vuelo.
+_MIGRACIONES = {
+    "leads": {"origen": "TEXT", "origen_ref": "TEXT"},
+    "senales": {"origen": "TEXT", "origen_id": "TEXT"},
+}
+
+
+def _migrar(conn: sqlite3.Connection):
+    for tabla, columnas in _MIGRACIONES.items():
+        existentes = {f["name"] for f in conn.execute(f"PRAGMA table_info({tabla})")}
+        for columna, tipo in columnas.items():
+            if columna not in existentes:
+                conn.execute(f"ALTER TABLE {tabla} ADD COLUMN {columna} {tipo}")
+    conn.commit()
 
 
 def get_conn() -> sqlite3.Connection:
@@ -59,6 +91,10 @@ def get_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    # Las tablas primero, luego las columnas nuevas, y al final los índices que
+    # dependen de ellas: en una base preexistente el índice fallaría sin la migración.
+    conn.executescript(_SCHEMA.split("-- Idempotencia")[0])
+    _migrar(conn)
     conn.executescript(_SCHEMA)
     return conn
 
@@ -91,6 +127,49 @@ def insertar_senal(conn, lead_id: int, tipo: str, detalle: str = "", fecha: str 
             (lead_id, tipo, detalle),
         )
     conn.commit()
+
+
+def upsert_lead_por_origen(conn, origen: str, origen_ref: str, campos: dict) -> tuple[int, bool]:
+    """Crea o actualiza un lead identificado por (origen, origen_ref).
+
+    Devuelve (lead_id, fue_creado). Al actualizar se preserva deliberadamente el
+    trabajo humano: la `etapa` no se toca (un lead ya en 'cita_agendada' no puede
+    volver a 'nuevo' porque el conector lo vuelva a ver) y el `fit_score` solo
+    sube — si el mismo desarrollador registra una obra más grande, gana la mayor.
+    """
+    fila = conn.execute(
+        "SELECT id, fit_score FROM leads WHERE origen = ? AND origen_ref = ?",
+        (origen, origen_ref),
+    ).fetchone()
+
+    if fila is None:
+        lead_id = insertar_lead(conn, origen=origen, origen_ref=origen_ref, **campos)
+        return lead_id, True
+
+    conn.execute(
+        "UPDATE leads SET fit_score = MAX(fit_score, ?), zona = COALESCE(?, zona), "
+        "notas = COALESCE(?, notas) WHERE id = ?",
+        (campos.get("fit_score", 0), campos.get("zona"), campos.get("notas"), fila["id"]),
+    )
+    conn.commit()
+    return fila["id"], False
+
+
+def insertar_senal_unica(conn, lead_id: int, tipo: str, detalle: str = "",
+                         fecha: str | None = None, origen: str | None = None,
+                         origen_id: str | None = None) -> bool:
+    """Inserta una señal deduplicada por (origen, origen_id). True si era nueva.
+
+    El índice único hace el trabajo: reingerir el mismo folio no crea una segunda
+    señal, que si no inflaría el score de intención en cada corrida del conector.
+    """
+    cur = conn.execute(
+        "INSERT OR IGNORE INTO senales (lead_id, tipo, detalle, origen, origen_id, fecha) "
+        "VALUES (?, ?, ?, ?, ?, COALESCE(?, datetime('now')))",
+        (lead_id, tipo, detalle, origen, origen_id, fecha),
+    )
+    conn.commit()
+    return cur.rowcount > 0
 
 
 def registrar_captura(conn, nombre: str, email: str, interes: str, zona: str):
