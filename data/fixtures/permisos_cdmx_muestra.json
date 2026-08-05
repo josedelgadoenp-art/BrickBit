@@ -1,0 +1,136 @@
+{
+  "_nota": "MUESTRA SINTÉTICA. Replica la forma de respuesta de CKAN datastore_search del portal de datos abiertos de CDMX, pero los nombres de propietarios y los folios son ficticios. Sirve para desarrollo y pruebas sin depender de que el portal esté disponible. Incluye casos borde a propósito: un registro fuera de las zonas cubiertas, uno sin propietario y dos folios del mismo desarrollador.",
+  "success": true,
+  "result": {
+    "total": 14,
+    "fields": [
+      {"id": "folio", "type": "text"},
+      {"id": "fecha_registro", "type": "text"},
+      {"id": "tipo_manifestacion", "type": "text"},
+      {"id": "propietario", "type": "text"},
+      {"id": "alcaldia", "type": "text"},
+      {"id": "colonia", "type": "text"},
+      {"id": "calle", "type": "text"},
+      {"id": "latitud", "type": "numeric"},
+      {"id": "longitud", "type": "numeric"},
+      {"id": "superficie_construccion", "type": "numeric"},
+      {"id": "niveles", "type": "numeric"},
+      {"id": "num_viviendas", "type": "numeric"},
+      {"id": "uso_suelo", "type": "text"}
+    ],
+    "records": [
+      {
+        "folio": "MC-CUH-0412/2026", "fecha_registro": "2026-07-14",
+        "tipo_manifestacion": "B", "propietario": "CONSTRUCTORA BOSQUE REAL, S.A. DE C.V.",
+        "alcaldia": "CUAUHTEMOC", "colonia": "ROMA NORTE", "calle": "AV. ALVARO OBREGON 214",
+        "latitud": 19.4171, "longitud": -99.1633,
+        "superficie_construccion": 6800, "niveles": 9, "num_viviendas": 48,
+        "uso_suelo": "HABITACIONAL PLURIFAMILIAR"
+      },
+      {
+        "folio": "MC-BJ-0233/2026", "fecha_registro": "2026-07-02",
+        "tipo_manifestacion": "C", "propietario": "DESARROLLOS URBANOS TEZONTLE S.A.P.I. DE C.V.",
+        "alcaldia": "BENITO JUAREZ", "colonia": "NARVARTE PONIENTE", "calle": "EJE 5 SUR 1180",
+        "latitud": 19.3991, "longitud": -99.1533,
+        "superficie_construccion": 24500, "niveles": 18, "num_viviendas": 164,
+        "uso_suelo": "MIXTO HABITACIONAL Y COMERCIAL"
+      },
+      {
+        "folio": "MC-BJ-0251/2026", "fecha_registro": "2026-07-21",
+        "tipo_manifestacion": "B", "propietario": "Desarrollos Urbanos Tezontle SAPI de CV",
+        "alcaldia": "BENITO JUAREZ", "colonia": "DEL VALLE CENTRO", "calle": "AV. COYOACAN 940",
+        "latitud": 19.3874, "longitud": -99.1671,
+        "superficie_construccion": 9200, "niveles": 11, "num_viviendas": 62,
+        "uso_suelo": "HABITACIONAL PLURIFAMILIAR"
+      },
+      {
+        "folio": "MC-MH-0118/2026", "fecha_registro": "2026-06-28",
+        "tipo_manifestacion": "C", "propietario": "INMOBILIARIA CARDAL, S.A. DE C.V.",
+        "alcaldia": "MIGUEL HIDALGO", "colonia": "POLANCO V SECCION", "calle": "CAMPOS ELISEOS 380",
+        "latitud": 19.4318, "longitud": -99.1985,
+        "superficie_construccion": 31000, "niveles": 22, "num_viviendas": 96,
+        "uso_suelo": "MIXTO HABITACIONAL Y OFICINAS"
+      },
+      {
+        "folio": "MC-CUH-0388/2026", "fecha_registro": "2026-06-11",
+        "tipo_manifestacion": "B", "propietario": "GRUPO ALTIPLANO CONSTRUCCIONES S.A. DE C.V.",
+        "alcaldia": "CUAUHTEMOC", "colonia": "CONDESA", "calle": "AV. AMSTERDAM 77",
+        "latitud": 19.4119, "longitud": -99.1741,
+        "superficie_construccion": 4100, "niveles": 7, "num_viviendas": 26,
+        "uso_suelo": "HABITACIONAL PLURIFAMILIAR"
+      },
+      {
+        "folio": "MC-BJ-0209/2026", "fecha_registro": "2026-05-30",
+        "tipo_manifestacion": "B", "propietario": "EDIFICACIONES NAPOLES DEL SUR SA DE CV",
+        "alcaldia": "BENITO JUAREZ", "colonia": "NAPOLES", "calle": "PENNSYLVANIA 122",
+        "latitud": 19.3952, "longitud": -99.1750,
+        "superficie_construccion": 3200, "niveles": 6, "num_viviendas": 18,
+        "uso_suelo": "HABITACIONAL PLURIFAMILIAR"
+      },
+      {
+        "folio": "MC-BJ-0198/2026", "fecha_registro": "2026-05-19",
+        "tipo_manifestacion": "A", "propietario": "MARIANA QUINTERO SALAZAR",
+        "alcaldia": "BENITO JUAREZ", "colonia": "PORTALES NORTE", "calle": "CALZ. DE TLALPAN 1204",
+        "latitud": 19.3728, "longitud": -99.1462,
+        "superficie_construccion": 180, "niveles": 2, "num_viviendas": 1,
+        "uso_suelo": "HABITACIONAL UNIFAMILIAR"
+      },
+      {
+        "folio": "MC-CUH-0401/2026", "fecha_registro": "2026-07-08",
+        "tipo_manifestacion": "C", "propietario": "TORRES CORPORATIVAS JUAREZ S.A.P.I.",
+        "alcaldia": "CUAUHTEMOC", "colonia": "JUAREZ", "calle": "PASEO DE LA REFORMA 342",
+        "latitud": 19.4269, "longitud": -99.1592,
+        "superficie_construccion": 47000, "niveles": 28, "num_viviendas": 0,
+        "uso_suelo": "OFICINAS"
+      },
+      {
+        "folio": "MC-AO-0077/2026", "fecha_registro": "2026-06-24",
+        "tipo_manifestacion": "C", "propietario": "PROMOTORA SANTA FE PONIENTE, S.A. DE C.V.",
+        "alcaldia": "ALVARO OBREGON", "colonia": "SANTA FE", "calle": "AV. VASCO DE QUIROGA 2800",
+        "latitud": 19.3601, "longitud": -99.2587,
+        "superficie_construccion": 52000, "niveles": 24, "num_viviendas": 210,
+        "uso_suelo": "MIXTO HABITACIONAL Y COMERCIAL"
+      },
+      {
+        "folio": "MC-COY-0142/2026", "fecha_registro": "2026-04-16",
+        "tipo_manifestacion": "B", "propietario": "CONSTRUCTORA VIVERO DEL SUR SA DE CV",
+        "alcaldia": "COYOACAN", "colonia": "DEL CARMEN", "calle": "AV. MIGUEL ANGEL DE QUEVEDO 610",
+        "latitud": 19.3478, "longitud": -99.1629,
+        "superficie_construccion": 2400, "niveles": 5, "num_viviendas": 14,
+        "uso_suelo": "HABITACIONAL PLURIFAMILIAR"
+      },
+      {
+        "folio": "MC-GAM-0263/2026", "fecha_registro": "2026-07-19",
+        "tipo_manifestacion": "B", "propietario": "INMOBILIARIA LINDAVISTA NORTE S.A. DE C.V.",
+        "alcaldia": "GUSTAVO A. MADERO", "colonia": "LINDAVISTA", "calle": "AV. MONTEVIDEO 415",
+        "latitud": 19.4871, "longitud": -99.1312,
+        "superficie_construccion": 5600, "niveles": 8, "num_viviendas": 40,
+        "uso_suelo": "HABITACIONAL PLURIFAMILIAR"
+      },
+      {
+        "folio": "MC-MH-0131/2026", "fecha_registro": "2026-07-25",
+        "tipo_manifestacion": "B", "propietario": "ARQUITECTURA ANZURES ASOCIADOS S.C.",
+        "alcaldia": "MIGUEL HIDALGO", "colonia": "ANZURES", "calle": "LEIBNITZ 244",
+        "latitud": 19.4295, "longitud": -99.1822,
+        "superficie_construccion": 1800, "niveles": 4, "num_viviendas": 9,
+        "uso_suelo": "HABITACIONAL PLURIFAMILIAR"
+      },
+      {
+        "folio": "MC-MA-0019/2026", "fecha_registro": "2026-06-05",
+        "tipo_manifestacion": "A", "propietario": "JOSE RAMIREZ NAVARRO",
+        "alcaldia": "MILPA ALTA", "colonia": "SAN ANTONIO TECOMITL", "calle": "AV. NUEVO LEON 12",
+        "latitud": 19.1934, "longitud": -99.0142,
+        "superficie_construccion": 140, "niveles": 2, "num_viviendas": 1,
+        "uso_suelo": "HABITACIONAL UNIFAMILIAR"
+      },
+      {
+        "folio": "MC-CUH-0415/2026", "fecha_registro": "2026-07-27",
+        "tipo_manifestacion": "B", "propietario": "",
+        "alcaldia": "CUAUHTEMOC", "colonia": "ROMA NORTE", "calle": "TABASCO 190",
+        "latitud": 19.4188, "longitud": -99.1614,
+        "superficie_construccion": 2900, "niveles": 6, "num_viviendas": 16,
+        "uso_suelo": "HABITACIONAL PLURIFAMILIAR"
+      }
+    ]
+  }
+}
